@@ -1,4 +1,14 @@
+import { Display } from 'rot-js';
+
 export interface Actor {
   act(): Promise<void> | void;
-  draw(): void;
+  draw(display: Display): void;
+  x: number;
+  y: number;
+  isHostile: boolean;
+  isPickable: boolean;
+  weight: number;
+  strength: number;
+  name: string;
+  health: number;
 }

@@ -3685,19 +3685,51 @@
 
     const boardWidth = 30;
     const boardHeight = 30;
+    //# sourceMappingURL=constants.js.map
 
     class Enemy {
-        constructor(display, x, y) {
-            this.display = display;
+        constructor(x, y, weight, name, strength, health) {
             this.x = x;
             this.y = y;
+            this.weight = weight;
+            this.name = name;
+            this.strength = strength;
+            this.health = health;
+            this.isHostile = true;
         }
-        draw() {
-            this.display.draw(this.x, this.y, 'E', '#FFF', '#720');
+        get isPickable() {
+            return this.health === 0;
         }
         act() { }
     }
+    class Skeleton extends Enemy {
+        constructor(x, y) {
+            super(x, y, 15, 'Skeleton', 5, 5);
+        }
+        draw(display) {
+            display.draw(this.x, this.y, 'S', '#FFF', '#000');
+        }
+    }
     //# sourceMappingURL=enemy.js.map
+
+    class Treasure {
+        constructor(name, symbol, x, y) {
+            this.name = name;
+            this.symbol = symbol;
+            this.x = x;
+            this.y = y;
+            this.isHostile = false;
+            this.isPickable = true;
+            this.weight = 1;
+            this.strength = 0;
+            this.health = 100;
+        }
+        act() { }
+        draw(display) {
+            display.draw(this.x, this.y, this.symbol, '#000', '#FF0');
+        }
+    }
+    //# sourceMappingURL=treasure.js.map
 
     var Tile$1;
     (function (Tile) {
@@ -3705,12 +3737,14 @@
         Tile[Tile["Floor"] = 1] = "Floor";
     })(Tile$1 || (Tile$1 = {}));
     class World {
-        constructor(display) {
+        constructor(display, questLog) {
             this.display = display;
+            this.questLog = questLog;
             this.cells = [];
             this.map = null;
             this.enemies = [];
             this.actors = [];
+            this.dirty = [];
             this.startPoint = { x: 0, y: 0 };
             this.getMapBg = (x, y) => {
                 return (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD';
@@ -3735,16 +3769,22 @@
             for (let i = 0; i < 2; i++) {
                 const c = RNG$1.getUniformInt(0, freeCells.length - 1);
                 const { x, y } = freeCells[c];
-                const enemy = new Enemy(this.display, x, y);
+                const enemy = new Skeleton(x, y);
                 this.cells[x][y].occupant = enemy;
                 freeCells.splice(c, 1);
                 this.enemies.push(enemy);
                 this.actors.push(enemy);
-                enemy.draw();
+            }
+            for (let i = 0; i < 3; i++) {
+                const c = RNG$1.getUniformInt(0, freeCells.length - 1);
+                const { x, y } = freeCells[c];
+                const treasure = new Treasure('Cash', '$', x, y);
+                this.cells[x][y].occupant = treasure;
+                freeCells.splice(c, 1);
+                this.actors.push(treasure);
             }
         }
-        drawTile({ x, y }) {
-            const tile = this.cells[x][y].tile;
+        drawTile(x, y, tile) {
             switch (tile) {
                 case Tile$1.Floor:
                     this.display.draw(x, y, '', null, this.getMapBg(x, y));
@@ -3756,16 +3796,50 @@
                     break;
             }
         }
-        drawWholeMap() {
-            for (let x = 0; x < boardWidth; x++) {
-                for (let y = 0; y < boardHeight; y++) {
-                    this.drawTile({ x, y });
-                }
+        drawCell(x, y) {
+            const cell = this.cells[x][y];
+            if (cell.occupant) {
+                cell.occupant.draw(this.display);
+            }
+            else {
+                this.drawTile(x, y, cell.tile);
             }
         }
         drawEverything() {
-            this.drawWholeMap();
-            this.actors.forEach(actor => actor.draw());
+            for (let x = 0; x < boardWidth; x++) {
+                for (let y = 0; y < boardHeight; y++) {
+                    this.drawCell(x, y);
+                }
+            }
+        }
+        drawDirty() {
+            this.dirty.forEach(({ x, y }) => {
+                this.drawCell(x, y);
+            });
+            this.dirty.length = 0;
+        }
+        isPassable(x, y) {
+            return this.cells[x][y].tile === Tile$1.Floor;
+        }
+        isOccupied(x, y) {
+            return this.cells[x][y].occupant;
+        }
+        removeActor(actor) {
+            this.actors.splice(this.actors.indexOf(actor), 1);
+            this.cells[actor.x][actor.y].occupant = null;
+            this.dirty.push(actor);
+        }
+        leaveCell(actor) {
+            const { x, y } = actor;
+            const cell = this.cells[x][y];
+            cell.occupant = null;
+            this.dirty.push({ x, y });
+        }
+        occupyCell(actor) {
+            const { x, y } = actor;
+            const cell = this.cells[x][y];
+            cell.occupant = actor;
+            this.dirty.push({ x, y });
         }
     }
     //# sourceMappingURL=world.js.map
@@ -3782,14 +3856,27 @@
     //# sourceMappingURL=util.js.map
 
     class Player {
-        constructor(world, display) {
+        constructor(world) {
             this.world = world;
-            this.display = display;
             this.x = 0;
             this.y = 0;
+            this.isHostile = false;
+            this.isPickable = false;
+            this.strength = 10;
+            this.weight = 20;
+            this.name = 'Player';
+            this.health = 100;
+            this.inventory = [];
         }
-        draw() {
-            this.display.draw(this.x, this.y, '@', '#FFF', '#072');
+        get burden() {
+            let result = 0;
+            this.inventory.forEach(item => {
+                result += item.weight;
+            });
+            return result;
+        }
+        draw(display) {
+            display.draw(this.x, this.y, '@', '#FFF', '#072');
         }
         act() {
             return __awaiter(this, void 0, void 0, function* () {
@@ -3799,43 +3886,88 @@
             });
         }
         handleKeyPress(keyCode) {
-            let newX = this.x;
-            let newY = this.y;
-            let movePressed = false;
+            let dx = 0;
+            let dy = 0;
             switch (keyCode) {
                 case KEYS.VK_UP:
-                    newY -= 1;
-                    movePressed = true;
+                    dy = -1;
                     break;
                 case KEYS.VK_DOWN:
-                    movePressed = true;
-                    newY += 1;
+                    dy = 1;
                     break;
                 case KEYS.VK_LEFT:
-                    movePressed = true;
-                    newX -= 1;
+                    dx = -1;
                     break;
                 case KEYS.VK_RIGHT:
-                    movePressed = true;
-                    newX += 1;
+                    dx = 1;
                     break;
             }
-            if (movePressed) {
-                const target = this.world.cells[newX][newY];
-                if (target.tile === Tile$1.Floor) {
-                    if (target.occupant) ;
-                    else {
-                        this.world.drawTile(this);
-                        this.world.cells[this.x][this.y].occupant = null;
-                        this.x = newX;
-                        this.y = newY;
-                        this.draw();
+            if (dx !== 0 || dy !== 0) {
+                this.move(dx, dy);
+            }
+        }
+        move(dx, dy) {
+            const newX = this.x + dx;
+            const newY = this.y + dy;
+            if (this.world.isPassable(newX, newY)) {
+                const occupant = this.world.isOccupied(newX, newY);
+                if (occupant) {
+                    if (occupant.isHostile) {
+                        this.attack(occupant);
+                        return;
+                    }
+                    if (occupant.isPickable) {
+                        this.pickup(occupant);
                     }
                 }
+                this.world.leaveCell(this);
+                this.x = newX;
+                this.y = newY;
+                this.world.occupyCell(this);
+            }
+        }
+        attack(target) {
+            this.world.questLog.addEntry(`${this.name} attacked ${target.name} causing no damage!`, 'danger');
+        }
+        pickup(item) {
+            if (this.burden + item.weight <= this.strength) {
+                this.world.removeActor(item);
+                this.inventory.push(item);
+                this.world.questLog.addEntry(`Your picked up a ${item.name}`, 'success');
             }
         }
     }
     //# sourceMappingURL=player.js.map
+
+    const dateFormat = Intl.DateTimeFormat(undefined, {
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric'
+    });
+    class QuestLog {
+        constructor() {
+            this.items = [];
+            this.container = document.createElement('div');
+            this.container.classList.add('quest-log');
+            document.body.appendChild(this.container);
+        }
+        addEntry(text, type) {
+            const entry = { text, type, date: new Date() };
+            this.items.push(entry);
+            if (this.container.childNodes.length === 5) {
+                this.container.removeChild(this.container.childNodes[0]);
+            }
+            const el = document.createElement('div');
+            el.classList.add('log-item', type);
+            el.innerText = `${dateFormat.format(entry.date)} ${text}`;
+            this.container.appendChild(el);
+        }
+        clear() {
+            this.container.innerHTML = '';
+            this.items.length = 0;
+        }
+    }
+    //# sourceMappingURL=quest-log.js.map
 
     class Game {
         constructor() {
@@ -3850,15 +3982,19 @@
             const container = this.display.getContainer();
             container.classList.add('container');
             document.body.appendChild(container);
-            this.world = new World(this.display);
+            this.questLog = new QuestLog();
+            this.world = new World(this.display, this.questLog);
         }
         start() {
             return __awaiter(this, void 0, void 0, function* () {
+                this.questLog.clear();
+                this.questLog.addEntry('Your adventure begins!', 'info');
                 this.scheduler.clear();
-                this.player = new Player(this.world, this.display);
+                this.player = new Player(this.world);
                 this.player.x = this.world.startPoint.x;
                 this.player.y = this.world.startPoint.y;
                 this.world.actors.push(this.player);
+                this.world.occupyCell(this.player);
                 this.world.actors.forEach(actor => {
                     this.scheduler.add(actor, true);
                 });
@@ -3869,6 +4005,7 @@
                         break;
                     }
                     yield actor.act();
+                    this.world.drawDirty();
                 }
             });
         }

@@ -6,11 +6,27 @@ import { Tile, World } from './world';
 export class Player implements Actor {
   public x: number = 0;
   public y: number = 0;
+  public isHostile = false;
+  public isPickable = false;
+  public strength = 10;
+  public weight = 20;
+  public name = 'Player';
+  public health = 100;
 
-  constructor(private world: World, private display: Display) {}
+  public inventory: Actor[] = [];
 
-  draw() {
-    this.display.draw(this.x, this.y, '@', '#FFF', '#072');
+  private get burden() {
+    let result = 0;
+    this.inventory.forEach(item => {
+      result += item.weight;
+    });
+    return result;
+  }
+
+  constructor(private world: World) {}
+
+  draw(display: Display) {
+    display.draw(this.x, this.y, '@', '#FFF', '#072');
   }
 
   async act() {
@@ -20,45 +36,68 @@ export class Player implements Actor {
   }
 
   handleKeyPress(keyCode: number) {
-    let newX = this.x;
-    let newY = this.y;
-
-    let movePressed = false;
+    let dx = 0;
+    let dy = 0;
 
     switch (keyCode) {
       case KEYS.VK_UP:
-        newY -= 1;
-        movePressed = true;
+        dy = -1;
         break;
       case KEYS.VK_DOWN:
-        movePressed = true;
-        newY += 1;
+        dy = 1;
         break;
       case KEYS.VK_LEFT:
-        movePressed = true;
-        newX -= 1;
+        dx = -1;
         break;
       case KEYS.VK_RIGHT:
-        movePressed = true;
-        newX += 1;
+        dx = 1;
         break;
     }
 
-    if (movePressed) {
-      const target = this.world.cells[newX][newY];
+    if (dx !== 0 || dy !== 0) {
+      this.move(dx, dy);
+    }
+  }
 
-      if (target.tile === Tile.Floor) {
-        if (target.occupant) {
-        } else {
-          this.world.drawTile(this);
-          this.world.cells[this.x][this.y].occupant = null;
+  move(dx: number, dy: number) {
+    const newX = this.x + dx;
+    const newY = this.y + dy;
 
-          this.x = newX;
-          this.y = newY;
+    if (this.world.isPassable(newX, newY)) {
+      const occupant = this.world.isOccupied(newX, newY);
 
-          this.draw();
+      if (occupant) {
+        if (occupant.isHostile) {
+          this.attack(occupant);
+          return;
+        }
+
+        if (occupant.isPickable) {
+          this.pickup(occupant);
         }
       }
+
+      this.world.leaveCell(this);
+
+      this.x = newX;
+      this.y = newY;
+
+      this.world.occupyCell(this);
+    }
+  }
+
+  attack(target: Actor) {
+    this.world.questLog.addEntry(
+      `${this.name} attacked ${target.name} causing no damage!`,
+      'danger'
+    );
+  }
+
+  pickup(item: Actor) {
+    if (this.burden + item.weight <= this.strength) {
+      this.world.removeActor(item);
+      this.inventory.push(item);
+      this.world.questLog.addEntry(`Your picked up a ${item.name}`, 'success');
     }
   }
 }

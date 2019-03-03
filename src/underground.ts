@@ -1,4 +1,4 @@
-import { Display, Map, RNG, KEYS } from 'rot-js';
+import { RNG } from 'rot-js';
 import { Game } from './game';
 
 console.log('hello dungeon');
