@@ -1,21 +1,6 @@
 (function () {
     'use strict';
 
-    /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
-
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
-
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
-    ***************************************************************************** */
-
     /**
      * This code is an implementation of Alea algorithm; (C) 2010 Johannes Baagøe.
      * Alea is licensed according to the http://en.wikipedia.org/wiki/MIT_License.
@@ -1510,6 +1495,256 @@
     Display.Hex = Hex;
     Display.Tile = Tile;
     Display.Term = Term;
+
+    class EventQueue {
+        /**
+         * @class Generic event queue: stores events and retrieves them based on their time
+         */
+        constructor() {
+            this._time = 0;
+            this._events = [];
+            this._eventTimes = [];
+        }
+        /**
+         * @returns {number} Elapsed time
+         */
+        getTime() { return this._time; }
+        /**
+         * Clear all scheduled events
+         */
+        clear() {
+            this._events = [];
+            this._eventTimes = [];
+            return this;
+        }
+        /**
+         * @param {?} event
+         * @param {number} time
+         */
+        add(event, time) {
+            let index = this._events.length;
+            for (let i = 0; i < this._eventTimes.length; i++) {
+                if (this._eventTimes[i] > time) {
+                    index = i;
+                    break;
+                }
+            }
+            this._events.splice(index, 0, event);
+            this._eventTimes.splice(index, 0, time);
+        }
+        /**
+         * Locates the nearest event, advances time if necessary. Returns that event and removes it from the queue.
+         * @returns {? || null} The event previously added by addEvent, null if no event available
+         */
+        get() {
+            if (!this._events.length) {
+                return null;
+            }
+            let time = this._eventTimes.splice(0, 1)[0];
+            if (time > 0) { /* advance */
+                this._time += time;
+                for (let i = 0; i < this._eventTimes.length; i++) {
+                    this._eventTimes[i] -= time;
+                }
+            }
+            return this._events.splice(0, 1)[0];
+        }
+        /**
+         * Get the time associated with the given event
+         * @param {?} event
+         * @returns {number} time
+         */
+        getEventTime(event) {
+            let index = this._events.indexOf(event);
+            if (index == -1) {
+                return undefined;
+            }
+            return this._eventTimes[index];
+        }
+        /**
+         * Remove an event from the queue
+         * @param {?} event
+         * @returns {bool} success?
+         */
+        remove(event) {
+            let index = this._events.indexOf(event);
+            if (index == -1) {
+                return false;
+            }
+            this._remove(index);
+            return true;
+        }
+        ;
+        /**
+         * Remove an event from the queue
+         * @param {int} index
+         */
+        _remove(index) {
+            this._events.splice(index, 1);
+            this._eventTimes.splice(index, 1);
+        }
+        ;
+    }
+
+    class Scheduler {
+        /**
+         * @class Abstract scheduler
+         */
+        constructor() {
+            this._queue = new EventQueue();
+            this._repeat = [];
+            this._current = null;
+        }
+        /**
+         * @see ROT.EventQueue#getTime
+         */
+        getTime() { return this._queue.getTime(); }
+        /**
+         * @param {?} item
+         * @param {bool} repeat
+         */
+        add(item, repeat) {
+            if (repeat) {
+                this._repeat.push(item);
+            }
+            return this;
+        }
+        /**
+         * Get the time the given item is scheduled for
+         * @param {?} item
+         * @returns {number} time
+         */
+        getTimeOf(item) {
+            return this._queue.getEventTime(item);
+        }
+        /**
+         * Clear all items
+         */
+        clear() {
+            this._queue.clear();
+            this._repeat = [];
+            this._current = null;
+            return this;
+        }
+        /**
+         * Remove a previously added item
+         * @param {?} item
+         * @returns {bool} successful?
+         */
+        remove(item) {
+            let result = this._queue.remove(item);
+            let index = this._repeat.indexOf(item);
+            if (index != -1) {
+                this._repeat.splice(index, 1);
+            }
+            if (this._current == item) {
+                this._current = null;
+            }
+            return result;
+        }
+        /**
+         * Schedule next item
+         * @returns {?}
+         */
+        next() {
+            this._current = this._queue.get();
+            return this._current;
+        }
+    }
+
+    /**
+     * @class Simple fair scheduler (round-robin style)
+     */
+    class Simple extends Scheduler {
+        add(item, repeat) {
+            this._queue.add(item, 0);
+            return super.add(item, repeat);
+        }
+        next() {
+            if (this._current && this._repeat.indexOf(this._current) != -1) {
+                this._queue.add(this._current, 0);
+            }
+            return super.next();
+        }
+    }
+
+    /**
+     * @class Speed-based scheduler
+     */
+    class Speed extends Scheduler {
+        /**
+         * @param {object} item anything with "getSpeed" method
+         * @param {bool} repeat
+         * @param {number} [time=1/item.getSpeed()]
+         * @see ROT.Scheduler#add
+         */
+        add(item, repeat, time) {
+            this._queue.add(item, time !== undefined ? time : 1 / item.getSpeed());
+            return super.add(item, repeat);
+        }
+        /**
+         * @see ROT.Scheduler#next
+         */
+        next() {
+            if (this._current && this._repeat.indexOf(this._current) != -1) {
+                this._queue.add(this._current, 1 / this._current.getSpeed());
+            }
+            return super.next();
+        }
+    }
+
+    /**
+     * @class Action-based scheduler
+     * @augments ROT.Scheduler
+     */
+    class Action extends Scheduler {
+        constructor() {
+            super();
+            this._defaultDuration = 1; /* for newly added */
+            this._duration = this._defaultDuration; /* for this._current */
+        }
+        /**
+         * @param {object} item
+         * @param {bool} repeat
+         * @param {number} [time=1]
+         * @see ROT.Scheduler#add
+         */
+        add(item, repeat, time) {
+            this._queue.add(item, time || this._defaultDuration);
+            return super.add(item, repeat);
+        }
+        clear() {
+            this._duration = this._defaultDuration;
+            return super.clear();
+        }
+        remove(item) {
+            if (item == this._current) {
+                this._duration = this._defaultDuration;
+            }
+            return super.remove(item);
+        }
+        /**
+         * @see ROT.Scheduler#next
+         */
+        next() {
+            if (this._current && this._repeat.indexOf(this._current) != -1) {
+                this._queue.add(this._current, this._duration || this._defaultDuration);
+                this._duration = this._defaultDuration;
+            }
+            return super.next();
+        }
+        /**
+         * Set duration for the active item
+         */
+        setDuration(time) {
+            if (this._current) {
+                this._duration = time;
+            }
+            return this;
+        }
+    }
+
+    var Scheduler$1 = { Simple, Speed, Action };
 
     class Map {
         /**
@@ -3424,73 +3659,226 @@
      * @param {ROT.Scheduler} scheduler
      */
 
-    console.log('hello dungeon');
-    RNG$1.setSeed(11);
-    const width = 30;
-    const height = 30;
-    const d = new Display({
-        width,
-        height,
-        fontSize: 18,
-        forceSquareRatio: true
-    });
-    const container = d.getContainer();
-    container.classList.add('container');
-    document.body.appendChild(container);
-    const gen = new Map$1.Uniform(width, height, {});
-    const map = Array.from({
-        length: width
-    }, () => Array.from({
-        length: height
-    }, () => ({
-        tile: null
-    })));
-    gen.create((x, y, value) => {
-        if (!value) {
-            map[x][y].tile = '.';
+    /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation. All rights reserved.
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+    this file except in compliance with the License. You may obtain a copy of the
+    License at http://www.apache.org/licenses/LICENSE-2.0
+
+    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+    MERCHANTABLITY OR NON-INFRINGEMENT.
+
+    See the Apache Version 2.0 License for specific language governing permissions
+    and limitations under the License.
+    ***************************************************************************** */
+
+    function __awaiter(thisArg, _arguments, P, generator) {
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    }
+
+    const boardWidth = 30;
+    const boardHeight = 30;
+
+    class Enemy {
+        constructor(display, x, y) {
+            this.display = display;
+            this.x = x;
+            this.y = y;
         }
-    });
-    for (let x = 0; x < width; x++) {
-        for (let y = 0; y < height; y++) {
-            const cell = map[x][y];
-            if (cell.tile) {
-                d.draw(x, y, ' ', null, (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD');
-                if (!map[x][y - 1].tile) {
-                    d.draw(x, y - 1, null, null, '#444');
+        draw() {
+            this.display.draw(this.x, this.y, 'E', '#FFF', '#720');
+        }
+        act() { }
+    }
+    //# sourceMappingURL=enemy.js.map
+
+    var Tile$1;
+    (function (Tile) {
+        Tile[Tile["Wall"] = 0] = "Wall";
+        Tile[Tile["Floor"] = 1] = "Floor";
+    })(Tile$1 || (Tile$1 = {}));
+    class World {
+        constructor(display) {
+            this.display = display;
+            this.cells = [];
+            this.map = null;
+            this.enemies = [];
+            this.actors = [];
+            this.startPoint = { x: 0, y: 0 };
+            this.getMapBg = (x, y) => {
+                return (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD';
+            };
+            this.cells = Array.from({
+                length: boardWidth
+            }, () => Array.from({
+                length: boardHeight
+            }, () => ({ tile: Tile$1.Wall, occupant: null })));
+            const freeCells = [];
+            this.map = new Map$1.Uniform(boardWidth, boardHeight, {});
+            this.map.create((x, y, value) => {
+                if (!value) {
+                    this.cells[x][y].tile = Tile$1.Floor;
+                    freeCells.push({ x, y });
+                }
+            });
+            // Put the player in the middle of the first room.
+            const [x, y] = this.map.getRooms()[0].getCenter();
+            this.startPoint = { x, y };
+            this.enemies.length = 0;
+            for (let i = 0; i < 2; i++) {
+                const c = RNG$1.getUniformInt(0, freeCells.length - 1);
+                const { x, y } = freeCells[c];
+                const enemy = new Enemy(this.display, x, y);
+                this.cells[x][y].occupant = enemy;
+                freeCells.splice(c, 1);
+                this.enemies.push(enemy);
+                this.actors.push(enemy);
+                enemy.draw();
+            }
+        }
+        drawTile({ x, y }) {
+            const tile = this.cells[x][y].tile;
+            switch (tile) {
+                case Tile$1.Floor:
+                    this.display.draw(x, y, '', null, this.getMapBg(x, y));
+                    break;
+                case Tile$1.Wall:
+                    if (y < boardHeight - 1 && this.cells[x][y + 1].tile === Tile$1.Floor) {
+                        this.display.draw(x, y, '', '', '#333');
+                    }
+                    break;
+            }
+        }
+        drawWholeMap() {
+            for (let x = 0; x < boardWidth; x++) {
+                for (let y = 0; y < boardHeight; y++) {
+                    this.drawTile({ x, y });
+                }
+            }
+        }
+        drawEverything() {
+            this.drawWholeMap();
+            this.actors.forEach(actor => actor.draw());
+        }
+    }
+    //# sourceMappingURL=world.js.map
+
+    function getKeyPress() {
+        return new Promise(resolve => {
+            const handler = (event) => {
+                window.removeEventListener('keydown', handler);
+                resolve(event.keyCode);
+            };
+            window.addEventListener('keydown', handler);
+        });
+    }
+    //# sourceMappingURL=util.js.map
+
+    class Player {
+        constructor(world, display) {
+            this.world = world;
+            this.display = display;
+            this.x = 0;
+            this.y = 0;
+        }
+        draw() {
+            this.display.draw(this.x, this.y, '@', '#FFF', '#072');
+        }
+        act() {
+            return __awaiter(this, void 0, void 0, function* () {
+                return getKeyPress().then(keyCode => {
+                    this.handleKeyPress(keyCode);
+                });
+            });
+        }
+        handleKeyPress(keyCode) {
+            let newX = this.x;
+            let newY = this.y;
+            let movePressed = false;
+            switch (keyCode) {
+                case KEYS.VK_UP:
+                    newY -= 1;
+                    movePressed = true;
+                    break;
+                case KEYS.VK_DOWN:
+                    movePressed = true;
+                    newY += 1;
+                    break;
+                case KEYS.VK_LEFT:
+                    movePressed = true;
+                    newX -= 1;
+                    break;
+                case KEYS.VK_RIGHT:
+                    movePressed = true;
+                    newX += 1;
+                    break;
+            }
+            if (movePressed) {
+                const target = this.world.cells[newX][newY];
+                if (target.tile === Tile$1.Floor) {
+                    if (target.occupant) ;
+                    else {
+                        this.world.drawTile(this);
+                        this.world.cells[this.x][this.y].occupant = null;
+                        this.x = newX;
+                        this.y = newY;
+                        this.draw();
+                    }
                 }
             }
         }
     }
-    const startPos = gen.getRooms()[0].getCenter();
-    const player = {
-        x: startPos[0],
-        y: startPos[1]
-    };
-    d.draw(player.x, player.y, 'P', '#0F0', null);
-    window.addEventListener('keydown', e => {
-        let newX = player.x;
-        let newY = player.y;
-        switch (e.keyCode) {
-            case KEYS.VK_UP:
-                newY -= 1;
-                break;
-            case KEYS.VK_DOWN:
-                newY += 1;
-                break;
-            case KEYS.VK_LEFT:
-                newX -= 1;
-                break;
-            case KEYS.VK_RIGHT:
-                newX += 1;
-                break;
+    //# sourceMappingURL=player.js.map
+
+    class Game {
+        constructor() {
+            this.scheduler = new Scheduler$1.Simple();
+            this.player = null;
+            this.display = new Display({
+                width: boardWidth,
+                height: boardHeight,
+                fontSize: 18,
+                forceSquareRatio: true
+            });
+            const container = this.display.getContainer();
+            container.classList.add('container');
+            document.body.appendChild(container);
+            this.world = new World(this.display);
         }
-        if (map[newX][newY].tile) {
-            d.draw(player.x, player.y, ' ', null, (player.x % 2) + (player.y % 2) - 1 ? '#EEE' : '#DDD');
-            player.x = newX;
-            player.y = newY;
-            d.draw(player.x, player.y, 'P', '#0F0', null);
+        start() {
+            return __awaiter(this, void 0, void 0, function* () {
+                this.scheduler.clear();
+                this.player = new Player(this.world, this.display);
+                this.player.x = this.world.startPoint.x;
+                this.player.y = this.world.startPoint.y;
+                this.world.actors.push(this.player);
+                this.world.actors.forEach(actor => {
+                    this.scheduler.add(actor, true);
+                });
+                this.world.drawEverything();
+                while (1) {
+                    let actor = this.scheduler.next();
+                    if (!actor) {
+                        break;
+                    }
+                    yield actor.act();
+                }
+            });
         }
-    });
+    }
+    //# sourceMappingURL=game.js.map
+
+    console.log('hello dungeon');
+    RNG$1.setSeed(11);
+    new Game().start();
+    //# sourceMappingURL=underground.js.map
 
 }());
 //# sourceMappingURL=underground.js.map
