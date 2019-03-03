@@ -60,7 +60,7 @@ export class World {
     for (let i = 0; i < 2; i++) {
       const c = RNG.getUniformInt(0, freeCells.length - 1);
       const { x, y } = freeCells[c];
-      const enemy = new Skeleton(x, y);
+      const enemy = new Skeleton(x, y, this);
       this.cells[x][y].occupant = enemy;
       freeCells.splice(c, 1);
       this.enemies.push(enemy);

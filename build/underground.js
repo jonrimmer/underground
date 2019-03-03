@@ -3688,23 +3688,36 @@
     //# sourceMappingURL=constants.js.map
 
     class Enemy {
-        constructor(x, y, weight, name, strength, health) {
+        constructor(x, y, weight, name, strength, health, world) {
             this.x = x;
             this.y = y;
             this.weight = weight;
             this.name = name;
             this.strength = strength;
             this.health = health;
+            this.world = world;
             this.isHostile = true;
+            this.currentTarget = null;
         }
         get isPickable() {
             return this.health === 0;
         }
-        act() { }
+        notifyAttack(aggressor) {
+            this.currentTarget = aggressor;
+        }
+        act() {
+            if (this.currentTarget) {
+                const { x: tx, y: ty } = this.currentTarget;
+                if (Math.abs(tx - this.x) <= 1 && Math.abs(ty - this.y) <= 1) {
+                    // In range.
+                    this.world.questLog.addEntry(`${this.name} attacked ${this.currentTarget.name} and caused no damage.`, 'danger');
+                }
+            }
+        }
     }
     class Skeleton extends Enemy {
-        constructor(x, y) {
-            super(x, y, 15, 'Skeleton', 5, 5);
+        constructor(x, y, world) {
+            super(x, y, 15, 'Skeleton', 5, 5, world);
         }
         draw(display) {
             display.draw(this.x, this.y, 'S', '#FFF', '#000');
@@ -3769,7 +3782,7 @@
             for (let i = 0; i < 2; i++) {
                 const c = RNG$1.getUniformInt(0, freeCells.length - 1);
                 const { x, y } = freeCells[c];
-                const enemy = new Skeleton(x, y);
+                const enemy = new Skeleton(x, y, this);
                 this.cells[x][y].occupant = enemy;
                 freeCells.splice(c, 1);
                 this.enemies.push(enemy);
@@ -3928,16 +3941,18 @@
         }
         attack(target) {
             this.world.questLog.addEntry(`${this.name} attacked ${target.name} causing no damage!`, 'danger');
+            if (target.notifyAttack) {
+                target.notifyAttack(this);
+            }
         }
         pickup(item) {
             if (this.burden + item.weight <= this.strength) {
                 this.world.removeActor(item);
                 this.inventory.push(item);
-                this.world.questLog.addEntry(`Your picked up a ${item.name}`, 'success');
+                this.world.questLog.addEntry(`${this.name} picked up a ${item.name}`, 'success');
             }
         }
     }
-    //# sourceMappingURL=player.js.map
 
     const dateFormat = Intl.DateTimeFormat(undefined, {
         hour: 'numeric',

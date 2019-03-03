@@ -91,13 +91,20 @@ export class Player implements Actor {
       `${this.name} attacked ${target.name} causing no damage!`,
       'danger'
     );
+
+    if (target.notifyAttack) {
+      target.notifyAttack(this);
+    }
   }
 
   pickup(item: Actor) {
     if (this.burden + item.weight <= this.strength) {
       this.world.removeActor(item);
       this.inventory.push(item);
-      this.world.questLog.addEntry(`Your picked up a ${item.name}`, 'success');
+      this.world.questLog.addEntry(
+        `${this.name} picked up a ${item.name}`,
+        'success'
+      );
     }
   }
 }
