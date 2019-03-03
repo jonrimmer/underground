@@ -1,0 +1,24 @@
+{
+  "name": "underground",
+  "version": "0.0.1",
+  "description": "7DRL Challenge Game",
+  "main": "index.js",
+  "scripts": {
+    "watch": "tsc --watch",
+    "bundle": "rollup --config rollup.config.js --watch",
+    "serve": "live-server --watch=./build",
+    "dev": "concurrently npm:watch npm:bundle npm:serve"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "rot-js": "^2.0.3"
+  },
+  "devDependencies": {
+    "concurrently": "^4.1.0",
+    "live-server": "^1.2.1",
+    "rollup": "^1.4.0",
+    "rollup-plugin-node-resolve": "^4.0.1",
+    "typescript": "^3.3.3333"
+  }
+}
