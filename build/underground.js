@@ -1,6 +1,21 @@
 (function () {
     'use strict';
 
+    /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation. All rights reserved.
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+    this file except in compliance with the License. You may obtain a copy of the
+    License at http://www.apache.org/licenses/LICENSE-2.0
+
+    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+    MERCHANTABLITY OR NON-INFRINGEMENT.
+
+    See the Apache Version 2.0 License for specific language governing permissions
+    and limitations under the License.
+    ***************************************************************************** */
+
     /**
      * This code is an implementation of Alea algorithm; (C) 2010 Johannes Baagøe.
      * Alea is licensed according to the http://en.wikipedia.org/wiki/MIT_License.
@@ -136,7 +151,7 @@
             return clone.setState(this.getState());
         }
     }
-    new RNG().setSeed(Date.now());
+    var RNG$1 = new RNG().setSeed(Date.now());
 
     /**
      * @class Abstract display backend module
@@ -939,6 +954,321 @@
     let DEFAULT_WIDTH = 80;
     /** Default height for display and map generators */
     let DEFAULT_HEIGHT = 25;
+    const DIRS = {
+        4: [[0, -1], [1, 0], [0, 1], [-1, 0]],
+        8: [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]],
+        6: [[-1, -1], [1, -1], [2, 0], [1, 1], [-1, 1], [-2, 0]]
+    };
+    const KEYS = {
+        /** Cancel key. */
+        VK_CANCEL: 3,
+        /** Help key. */
+        VK_HELP: 6,
+        /** Backspace key. */
+        VK_BACK_SPACE: 8,
+        /** Tab key. */
+        VK_TAB: 9,
+        /** 5 key on Numpad when NumLock is unlocked. Or on Mac, clear key which is positioned at NumLock key. */
+        VK_CLEAR: 12,
+        /** Return/enter key on the main keyboard. */
+        VK_RETURN: 13,
+        /** Reserved, but not used. */
+        VK_ENTER: 14,
+        /** Shift key. */
+        VK_SHIFT: 16,
+        /** Control key. */
+        VK_CONTROL: 17,
+        /** Alt (Option on Mac) key. */
+        VK_ALT: 18,
+        /** Pause key. */
+        VK_PAUSE: 19,
+        /** Caps lock. */
+        VK_CAPS_LOCK: 20,
+        /** Escape key. */
+        VK_ESCAPE: 27,
+        /** Space bar. */
+        VK_SPACE: 32,
+        /** Page Up key. */
+        VK_PAGE_UP: 33,
+        /** Page Down key. */
+        VK_PAGE_DOWN: 34,
+        /** End key. */
+        VK_END: 35,
+        /** Home key. */
+        VK_HOME: 36,
+        /** Left arrow. */
+        VK_LEFT: 37,
+        /** Up arrow. */
+        VK_UP: 38,
+        /** Right arrow. */
+        VK_RIGHT: 39,
+        /** Down arrow. */
+        VK_DOWN: 40,
+        /** Print Screen key. */
+        VK_PRINTSCREEN: 44,
+        /** Ins(ert) key. */
+        VK_INSERT: 45,
+        /** Del(ete) key. */
+        VK_DELETE: 46,
+        /***/
+        VK_0: 48,
+        /***/
+        VK_1: 49,
+        /***/
+        VK_2: 50,
+        /***/
+        VK_3: 51,
+        /***/
+        VK_4: 52,
+        /***/
+        VK_5: 53,
+        /***/
+        VK_6: 54,
+        /***/
+        VK_7: 55,
+        /***/
+        VK_8: 56,
+        /***/
+        VK_9: 57,
+        /** Colon (:) key. Requires Gecko 15.0 */
+        VK_COLON: 58,
+        /** Semicolon (;) key. */
+        VK_SEMICOLON: 59,
+        /** Less-than (<) key. Requires Gecko 15.0 */
+        VK_LESS_THAN: 60,
+        /** Equals (=) key. */
+        VK_EQUALS: 61,
+        /** Greater-than (>) key. Requires Gecko 15.0 */
+        VK_GREATER_THAN: 62,
+        /** Question mark (?) key. Requires Gecko 15.0 */
+        VK_QUESTION_MARK: 63,
+        /** Atmark (@) key. Requires Gecko 15.0 */
+        VK_AT: 64,
+        /***/
+        VK_A: 65,
+        /***/
+        VK_B: 66,
+        /***/
+        VK_C: 67,
+        /***/
+        VK_D: 68,
+        /***/
+        VK_E: 69,
+        /***/
+        VK_F: 70,
+        /***/
+        VK_G: 71,
+        /***/
+        VK_H: 72,
+        /***/
+        VK_I: 73,
+        /***/
+        VK_J: 74,
+        /***/
+        VK_K: 75,
+        /***/
+        VK_L: 76,
+        /***/
+        VK_M: 77,
+        /***/
+        VK_N: 78,
+        /***/
+        VK_O: 79,
+        /***/
+        VK_P: 80,
+        /***/
+        VK_Q: 81,
+        /***/
+        VK_R: 82,
+        /***/
+        VK_S: 83,
+        /***/
+        VK_T: 84,
+        /***/
+        VK_U: 85,
+        /***/
+        VK_V: 86,
+        /***/
+        VK_W: 87,
+        /***/
+        VK_X: 88,
+        /***/
+        VK_Y: 89,
+        /***/
+        VK_Z: 90,
+        /***/
+        VK_CONTEXT_MENU: 93,
+        /** 0 on the numeric keypad. */
+        VK_NUMPAD0: 96,
+        /** 1 on the numeric keypad. */
+        VK_NUMPAD1: 97,
+        /** 2 on the numeric keypad. */
+        VK_NUMPAD2: 98,
+        /** 3 on the numeric keypad. */
+        VK_NUMPAD3: 99,
+        /** 4 on the numeric keypad. */
+        VK_NUMPAD4: 100,
+        /** 5 on the numeric keypad. */
+        VK_NUMPAD5: 101,
+        /** 6 on the numeric keypad. */
+        VK_NUMPAD6: 102,
+        /** 7 on the numeric keypad. */
+        VK_NUMPAD7: 103,
+        /** 8 on the numeric keypad. */
+        VK_NUMPAD8: 104,
+        /** 9 on the numeric keypad. */
+        VK_NUMPAD9: 105,
+        /** * on the numeric keypad. */
+        VK_MULTIPLY: 106,
+        /** + on the numeric keypad. */
+        VK_ADD: 107,
+        /***/
+        VK_SEPARATOR: 108,
+        /** - on the numeric keypad. */
+        VK_SUBTRACT: 109,
+        /** Decimal point on the numeric keypad. */
+        VK_DECIMAL: 110,
+        /** / on the numeric keypad. */
+        VK_DIVIDE: 111,
+        /** F1 key. */
+        VK_F1: 112,
+        /** F2 key. */
+        VK_F2: 113,
+        /** F3 key. */
+        VK_F3: 114,
+        /** F4 key. */
+        VK_F4: 115,
+        /** F5 key. */
+        VK_F5: 116,
+        /** F6 key. */
+        VK_F6: 117,
+        /** F7 key. */
+        VK_F7: 118,
+        /** F8 key. */
+        VK_F8: 119,
+        /** F9 key. */
+        VK_F9: 120,
+        /** F10 key. */
+        VK_F10: 121,
+        /** F11 key. */
+        VK_F11: 122,
+        /** F12 key. */
+        VK_F12: 123,
+        /** F13 key. */
+        VK_F13: 124,
+        /** F14 key. */
+        VK_F14: 125,
+        /** F15 key. */
+        VK_F15: 126,
+        /** F16 key. */
+        VK_F16: 127,
+        /** F17 key. */
+        VK_F17: 128,
+        /** F18 key. */
+        VK_F18: 129,
+        /** F19 key. */
+        VK_F19: 130,
+        /** F20 key. */
+        VK_F20: 131,
+        /** F21 key. */
+        VK_F21: 132,
+        /** F22 key. */
+        VK_F22: 133,
+        /** F23 key. */
+        VK_F23: 134,
+        /** F24 key. */
+        VK_F24: 135,
+        /** Num Lock key. */
+        VK_NUM_LOCK: 144,
+        /** Scroll Lock key. */
+        VK_SCROLL_LOCK: 145,
+        /** Circumflex (^) key. Requires Gecko 15.0 */
+        VK_CIRCUMFLEX: 160,
+        /** Exclamation (!) key. Requires Gecko 15.0 */
+        VK_EXCLAMATION: 161,
+        /** Double quote () key. Requires Gecko 15.0 */
+        VK_DOUBLE_QUOTE: 162,
+        /** Hash (#) key. Requires Gecko 15.0 */
+        VK_HASH: 163,
+        /** Dollar sign ($) key. Requires Gecko 15.0 */
+        VK_DOLLAR: 164,
+        /** Percent (%) key. Requires Gecko 15.0 */
+        VK_PERCENT: 165,
+        /** Ampersand (&) key. Requires Gecko 15.0 */
+        VK_AMPERSAND: 166,
+        /** Underscore (_) key. Requires Gecko 15.0 */
+        VK_UNDERSCORE: 167,
+        /** Open parenthesis (() key. Requires Gecko 15.0 */
+        VK_OPEN_PAREN: 168,
+        /** Close parenthesis ()) key. Requires Gecko 15.0 */
+        VK_CLOSE_PAREN: 169,
+        /* Asterisk (*) key. Requires Gecko 15.0 */
+        VK_ASTERISK: 170,
+        /** Plus (+) key. Requires Gecko 15.0 */
+        VK_PLUS: 171,
+        /** Pipe (|) key. Requires Gecko 15.0 */
+        VK_PIPE: 172,
+        /** Hyphen-US/docs/Minus (-) key. Requires Gecko 15.0 */
+        VK_HYPHEN_MINUS: 173,
+        /** Open curly bracket ({) key. Requires Gecko 15.0 */
+        VK_OPEN_CURLY_BRACKET: 174,
+        /** Close curly bracket (}) key. Requires Gecko 15.0 */
+        VK_CLOSE_CURLY_BRACKET: 175,
+        /** Tilde (~) key. Requires Gecko 15.0 */
+        VK_TILDE: 176,
+        /** Comma (,) key. */
+        VK_COMMA: 188,
+        /** Period (.) key. */
+        VK_PERIOD: 190,
+        /** Slash (/) key. */
+        VK_SLASH: 191,
+        /** Back tick (`) key. */
+        VK_BACK_QUOTE: 192,
+        /** Open square bracket ([) key. */
+        VK_OPEN_BRACKET: 219,
+        /** Back slash (\) key. */
+        VK_BACK_SLASH: 220,
+        /** Close square bracket (]) key. */
+        VK_CLOSE_BRACKET: 221,
+        /** Quote (''') key. */
+        VK_QUOTE: 222,
+        /** Meta key on Linux, Command key on Mac. */
+        VK_META: 224,
+        /** AltGr key on Linux. Requires Gecko 15.0 */
+        VK_ALTGR: 225,
+        /** Windows logo key on Windows. Or Super or Hyper key on Linux. Requires Gecko 15.0 */
+        VK_WIN: 91,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_KANA: 21,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_HANGUL: 21,
+        /** 英数 key on Japanese Mac keyboard. Requires Gecko 15.0 */
+        VK_EISU: 22,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_JUNJA: 23,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_FINAL: 24,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_HANJA: 25,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_KANJI: 25,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_CONVERT: 28,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_NONCONVERT: 29,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_ACCEPT: 30,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_MODECHANGE: 31,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_SELECT: 41,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_PRINT: 42,
+        /** Linux support for this keycode was added in Gecko 4.0. */
+        VK_EXECUTE: 43,
+        /** Linux support for this keycode was added in Gecko 4.0.	 */
+        VK_SLEEP: 95
+    };
 
     const BACKENDS = {
         "hex": Hex,
@@ -1181,6 +1511,1910 @@
     Display.Tile = Tile;
     Display.Term = Term;
 
+    class Map {
+        /**
+         * @class Base map generator
+         * @param {int} [width=ROT.DEFAULT_WIDTH]
+         * @param {int} [height=ROT.DEFAULT_HEIGHT]
+         */
+        constructor(width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT) {
+            this._width = width;
+            this._height = height;
+        }
+        ;
+        _fillMap(value) {
+            let map = [];
+            for (let i = 0; i < this._width; i++) {
+                map.push([]);
+                for (let j = 0; j < this._height; j++) {
+                    map[i].push(value);
+                }
+            }
+            return map;
+        }
+    }
+
+    /**
+     * @class Simple empty rectangular room
+     * @augments ROT.Map
+     */
+    class Arena extends Map {
+        create(callback) {
+            let w = this._width - 1;
+            let h = this._height - 1;
+            for (let i = 0; i <= w; i++) {
+                for (let j = 0; j <= h; j++) {
+                    let empty = (i && j && i < w && j < h);
+                    callback(i, j, empty ? 0 : 1);
+                }
+            }
+            return this;
+        }
+    }
+
+    /**
+     * @class Dungeon map: has rooms and corridors
+     * @augments ROT.Map
+     */
+    class Dungeon extends Map {
+        constructor(width, height) {
+            super(width, height);
+            this._rooms = [];
+            this._corridors = [];
+        }
+        /**
+         * Get all generated rooms
+         * @returns {ROT.Map.Feature.Room[]}
+         */
+        getRooms() { return this._rooms; }
+        /**
+         * Get all generated corridors
+         * @returns {ROT.Map.Feature.Corridor[]}
+         */
+        getCorridors() { return this._corridors; }
+    }
+
+    /**
+     * @class Dungeon feature; has own .create() method
+     */
+    class Feature {
+    }
+    /**
+     * @class Room
+     * @augments ROT.Map.Feature
+     * @param {int} x1
+     * @param {int} y1
+     * @param {int} x2
+     * @param {int} y2
+     * @param {int} [doorX]
+     * @param {int} [doorY]
+     */
+    class Room extends Feature {
+        constructor(x1, y1, x2, y2, doorX, doorY) {
+            super();
+            this._x1 = x1;
+            this._y1 = y1;
+            this._x2 = x2;
+            this._y2 = y2;
+            this._doors = {};
+            if (doorX !== undefined && doorY !== undefined) {
+                this.addDoor(doorX, doorY);
+            }
+        }
+        ;
+        /**
+         * Room of random size, with a given doors and direction
+         */
+        static createRandomAt(x, y, dx, dy, options) {
+            let min = options.roomWidth[0];
+            let max = options.roomWidth[1];
+            let width = RNG$1.getUniformInt(min, max);
+            min = options.roomHeight[0];
+            max = options.roomHeight[1];
+            let height = RNG$1.getUniformInt(min, max);
+            if (dx == 1) { /* to the right */
+                let y2 = y - Math.floor(RNG$1.getUniform() * height);
+                return new this(x + 1, y2, x + width, y2 + height - 1, x, y);
+            }
+            if (dx == -1) { /* to the left */
+                let y2 = y - Math.floor(RNG$1.getUniform() * height);
+                return new this(x - width, y2, x - 1, y2 + height - 1, x, y);
+            }
+            if (dy == 1) { /* to the bottom */
+                let x2 = x - Math.floor(RNG$1.getUniform() * width);
+                return new this(x2, y + 1, x2 + width - 1, y + height, x, y);
+            }
+            if (dy == -1) { /* to the top */
+                let x2 = x - Math.floor(RNG$1.getUniform() * width);
+                return new this(x2, y - height, x2 + width - 1, y - 1, x, y);
+            }
+            throw new Error("dx or dy must be 1 or -1");
+        }
+        /**
+         * Room of random size, positioned around center coords
+         */
+        static createRandomCenter(cx, cy, options) {
+            let min = options.roomWidth[0];
+            let max = options.roomWidth[1];
+            let width = RNG$1.getUniformInt(min, max);
+            min = options.roomHeight[0];
+            max = options.roomHeight[1];
+            let height = RNG$1.getUniformInt(min, max);
+            let x1 = cx - Math.floor(RNG$1.getUniform() * width);
+            let y1 = cy - Math.floor(RNG$1.getUniform() * height);
+            let x2 = x1 + width - 1;
+            let y2 = y1 + height - 1;
+            return new this(x1, y1, x2, y2);
+        }
+        /**
+         * Room of random size within a given dimensions
+         */
+        static createRandom(availWidth, availHeight, options) {
+            let min = options.roomWidth[0];
+            let max = options.roomWidth[1];
+            let width = RNG$1.getUniformInt(min, max);
+            min = options.roomHeight[0];
+            max = options.roomHeight[1];
+            let height = RNG$1.getUniformInt(min, max);
+            let left = availWidth - width - 1;
+            let top = availHeight - height - 1;
+            let x1 = 1 + Math.floor(RNG$1.getUniform() * left);
+            let y1 = 1 + Math.floor(RNG$1.getUniform() * top);
+            let x2 = x1 + width - 1;
+            let y2 = y1 + height - 1;
+            return new this(x1, y1, x2, y2);
+        }
+        addDoor(x, y) {
+            this._doors[x + "," + y] = 1;
+            return this;
+        }
+        /**
+         * @param {function}
+         */
+        getDoors(cb) {
+            for (let key in this._doors) {
+                let parts = key.split(",");
+                cb(parseInt(parts[0]), parseInt(parts[1]));
+            }
+            return this;
+        }
+        clearDoors() {
+            this._doors = {};
+            return this;
+        }
+        addDoors(isWallCallback) {
+            let left = this._x1 - 1;
+            let right = this._x2 + 1;
+            let top = this._y1 - 1;
+            let bottom = this._y2 + 1;
+            for (let x = left; x <= right; x++) {
+                for (let y = top; y <= bottom; y++) {
+                    if (x != left && x != right && y != top && y != bottom) {
+                        continue;
+                    }
+                    if (isWallCallback(x, y)) {
+                        continue;
+                    }
+                    this.addDoor(x, y);
+                }
+            }
+            return this;
+        }
+        debug() {
+            console.log("room", this._x1, this._y1, this._x2, this._y2);
+        }
+        isValid(isWallCallback, canBeDugCallback) {
+            let left = this._x1 - 1;
+            let right = this._x2 + 1;
+            let top = this._y1 - 1;
+            let bottom = this._y2 + 1;
+            for (let x = left; x <= right; x++) {
+                for (let y = top; y <= bottom; y++) {
+                    if (x == left || x == right || y == top || y == bottom) {
+                        if (!isWallCallback(x, y)) {
+                            return false;
+                        }
+                    }
+                    else {
+                        if (!canBeDugCallback(x, y)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        /**
+         * @param {function} digCallback Dig callback with a signature (x, y, value). Values: 0 = empty, 1 = wall, 2 = door. Multiple doors are allowed.
+         */
+        create(digCallback) {
+            let left = this._x1 - 1;
+            let right = this._x2 + 1;
+            let top = this._y1 - 1;
+            let bottom = this._y2 + 1;
+            let value = 0;
+            for (let x = left; x <= right; x++) {
+                for (let y = top; y <= bottom; y++) {
+                    if (x + "," + y in this._doors) {
+                        value = 2;
+                    }
+                    else if (x == left || x == right || y == top || y == bottom) {
+                        value = 1;
+                    }
+                    else {
+                        value = 0;
+                    }
+                    digCallback(x, y, value);
+                }
+            }
+        }
+        getCenter() {
+            return [Math.round((this._x1 + this._x2) / 2), Math.round((this._y1 + this._y2) / 2)];
+        }
+        getLeft() { return this._x1; }
+        getRight() { return this._x2; }
+        getTop() { return this._y1; }
+        getBottom() { return this._y2; }
+    }
+    /**
+     * @class Corridor
+     * @augments ROT.Map.Feature
+     * @param {int} startX
+     * @param {int} startY
+     * @param {int} endX
+     * @param {int} endY
+     */
+    class Corridor extends Feature {
+        constructor(startX, startY, endX, endY) {
+            super();
+            this._startX = startX;
+            this._startY = startY;
+            this._endX = endX;
+            this._endY = endY;
+            this._endsWithAWall = true;
+        }
+        static createRandomAt(x, y, dx, dy, options) {
+            let min = options.corridorLength[0];
+            let max = options.corridorLength[1];
+            let length = RNG$1.getUniformInt(min, max);
+            return new this(x, y, x + dx * length, y + dy * length);
+        }
+        debug() {
+            console.log("corridor", this._startX, this._startY, this._endX, this._endY);
+        }
+        isValid(isWallCallback, canBeDugCallback) {
+            let sx = this._startX;
+            let sy = this._startY;
+            let dx = this._endX - sx;
+            let dy = this._endY - sy;
+            let length = 1 + Math.max(Math.abs(dx), Math.abs(dy));
+            if (dx) {
+                dx = dx / Math.abs(dx);
+            }
+            if (dy) {
+                dy = dy / Math.abs(dy);
+            }
+            let nx = dy;
+            let ny = -dx;
+            let ok = true;
+            for (let i = 0; i < length; i++) {
+                let x = sx + i * dx;
+                let y = sy + i * dy;
+                if (!canBeDugCallback(x, y)) {
+                    ok = false;
+                }
+                if (!isWallCallback(x + nx, y + ny)) {
+                    ok = false;
+                }
+                if (!isWallCallback(x - nx, y - ny)) {
+                    ok = false;
+                }
+                if (!ok) {
+                    length = i;
+                    this._endX = x - dx;
+                    this._endY = y - dy;
+                    break;
+                }
+            }
+            /**
+             * If the length degenerated, this corridor might be invalid
+             */
+            /* not supported */
+            if (length == 0) {
+                return false;
+            }
+            /* length 1 allowed only if the next space is empty */
+            if (length == 1 && isWallCallback(this._endX + dx, this._endY + dy)) {
+                return false;
+            }
+            /**
+             * We do not want the corridor to crash into a corner of a room;
+             * if any of the ending corners is empty, the N+1th cell of this corridor must be empty too.
+             *
+             * Situation:
+             * #######1
+             * .......?
+             * #######2
+             *
+             * The corridor was dug from left to right.
+             * 1, 2 - problematic corners, ? = N+1th cell (not dug)
+             */
+            let firstCornerBad = !isWallCallback(this._endX + dx + nx, this._endY + dy + ny);
+            let secondCornerBad = !isWallCallback(this._endX + dx - nx, this._endY + dy - ny);
+            this._endsWithAWall = isWallCallback(this._endX + dx, this._endY + dy);
+            if ((firstCornerBad || secondCornerBad) && this._endsWithAWall) {
+                return false;
+            }
+            return true;
+        }
+        /**
+         * @param {function} digCallback Dig callback with a signature (x, y, value). Values: 0 = empty.
+         */
+        create(digCallback) {
+            let sx = this._startX;
+            let sy = this._startY;
+            let dx = this._endX - sx;
+            let dy = this._endY - sy;
+            let length = 1 + Math.max(Math.abs(dx), Math.abs(dy));
+            if (dx) {
+                dx = dx / Math.abs(dx);
+            }
+            if (dy) {
+                dy = dy / Math.abs(dy);
+            }
+            for (let i = 0; i < length; i++) {
+                let x = sx + i * dx;
+                let y = sy + i * dy;
+                digCallback(x, y, 0);
+            }
+            return true;
+        }
+        createPriorityWalls(priorityWallCallback) {
+            if (!this._endsWithAWall) {
+                return;
+            }
+            let sx = this._startX;
+            let sy = this._startY;
+            let dx = this._endX - sx;
+            let dy = this._endY - sy;
+            if (dx) {
+                dx = dx / Math.abs(dx);
+            }
+            if (dy) {
+                dy = dy / Math.abs(dy);
+            }
+            let nx = dy;
+            let ny = -dx;
+            priorityWallCallback(this._endX + dx, this._endY + dy);
+            priorityWallCallback(this._endX + nx, this._endY + ny);
+            priorityWallCallback(this._endX - nx, this._endY - ny);
+        }
+    }
+
+    /**
+     * @class Dungeon generator which tries to fill the space evenly. Generates independent rooms and tries to connect them.
+     * @augments ROT.Map.Dungeon
+     */
+    class Uniform extends Dungeon {
+        constructor(width, height, options) {
+            super(width, height);
+            this._options = {
+                roomWidth: [3, 9],
+                roomHeight: [3, 5],
+                roomDugPercentage: 0.1,
+                timeLimit: 1000 /* we stop after this much time has passed (msec) */
+            };
+            Object.assign(this._options, options);
+            this._map = [];
+            this._dug = 0;
+            this._roomAttempts = 20; /* new room is created N-times until is considered as impossible to generate */
+            this._corridorAttempts = 20; /* corridors are tried N-times until the level is considered as impossible to connect */
+            this._connected = []; /* list of already connected rooms */
+            this._unconnected = []; /* list of remaining unconnected rooms */
+            this._digCallback = this._digCallback.bind(this);
+            this._canBeDugCallback = this._canBeDugCallback.bind(this);
+            this._isWallCallback = this._isWallCallback.bind(this);
+        }
+        /**
+         * Create a map. If the time limit has been hit, returns null.
+         * @see ROT.Map#create
+         */
+        create(callback) {
+            let t1 = Date.now();
+            while (1) {
+                let t2 = Date.now();
+                if (t2 - t1 > this._options.timeLimit) {
+                    return null;
+                } /* time limit! */
+                this._map = this._fillMap(1);
+                this._dug = 0;
+                this._rooms = [];
+                this._unconnected = [];
+                this._generateRooms();
+                if (this._rooms.length < 2) {
+                    continue;
+                }
+                if (this._generateCorridors()) {
+                    break;
+                }
+            }
+            if (callback) {
+                for (let i = 0; i < this._width; i++) {
+                    for (let j = 0; j < this._height; j++) {
+                        callback(i, j, this._map[i][j]);
+                    }
+                }
+            }
+            return this;
+        }
+        /**
+         * Generates a suitable amount of rooms
+         */
+        _generateRooms() {
+            let w = this._width - 2;
+            let h = this._height - 2;
+            let room;
+            do {
+                room = this._generateRoom();
+                if (this._dug / (w * h) > this._options.roomDugPercentage) {
+                    break;
+                } /* achieved requested amount of free space */
+            } while (room);
+            /* either enough rooms, or not able to generate more of them :) */
+        }
+        /**
+         * Try to generate one room
+         */
+        _generateRoom() {
+            let count = 0;
+            while (count < this._roomAttempts) {
+                count++;
+                let room = Room.createRandom(this._width, this._height, this._options);
+                if (!room.isValid(this._isWallCallback, this._canBeDugCallback)) {
+                    continue;
+                }
+                room.create(this._digCallback);
+                this._rooms.push(room);
+                return room;
+            }
+            /* no room was generated in a given number of attempts */
+            return null;
+        }
+        /**
+         * Generates connectors beween rooms
+         * @returns {bool} success Was this attempt successfull?
+         */
+        _generateCorridors() {
+            let cnt = 0;
+            while (cnt < this._corridorAttempts) {
+                cnt++;
+                this._corridors = [];
+                /* dig rooms into a clear map */
+                this._map = this._fillMap(1);
+                for (let i = 0; i < this._rooms.length; i++) {
+                    let room = this._rooms[i];
+                    room.clearDoors();
+                    room.create(this._digCallback);
+                }
+                this._unconnected = RNG$1.shuffle(this._rooms.slice());
+                this._connected = [];
+                if (this._unconnected.length) {
+                    this._connected.push(this._unconnected.pop());
+                } /* first one is always connected */
+                while (1) {
+                    /* 1. pick random connected room */
+                    let connected = RNG$1.getItem(this._connected);
+                    if (!connected) {
+                        break;
+                    }
+                    /* 2. find closest unconnected */
+                    let room1 = this._closestRoom(this._unconnected, connected);
+                    if (!room1) {
+                        break;
+                    }
+                    /* 3. connect it to closest connected */
+                    let room2 = this._closestRoom(this._connected, room1);
+                    if (!room2) {
+                        break;
+                    }
+                    let ok = this._connectRooms(room1, room2);
+                    if (!ok) {
+                        break;
+                    } /* stop connecting, re-shuffle */
+                    if (!this._unconnected.length) {
+                        return true;
+                    } /* done; no rooms remain */
+                }
+            }
+            return false;
+        }
+        ;
+        /**
+         * For a given room, find the closest one from the list
+         */
+        _closestRoom(rooms, room) {
+            let dist = Infinity;
+            let center = room.getCenter();
+            let result = null;
+            for (let i = 0; i < rooms.length; i++) {
+                let r = rooms[i];
+                let c = r.getCenter();
+                let dx = c[0] - center[0];
+                let dy = c[1] - center[1];
+                let d = dx * dx + dy * dy;
+                if (d < dist) {
+                    dist = d;
+                    result = r;
+                }
+            }
+            return result;
+        }
+        _connectRooms(room1, room2) {
+            /*
+                room1.debug();
+                room2.debug();
+            */
+            let center1 = room1.getCenter();
+            let center2 = room2.getCenter();
+            let diffX = center2[0] - center1[0];
+            let diffY = center2[1] - center1[1];
+            let start;
+            let end;
+            let dirIndex1, dirIndex2, min, max, index;
+            if (Math.abs(diffX) < Math.abs(diffY)) { /* first try connecting north-south walls */
+                dirIndex1 = (diffY > 0 ? 2 : 0);
+                dirIndex2 = (dirIndex1 + 2) % 4;
+                min = room2.getLeft();
+                max = room2.getRight();
+                index = 0;
+            }
+            else { /* first try connecting east-west walls */
+                dirIndex1 = (diffX > 0 ? 1 : 3);
+                dirIndex2 = (dirIndex1 + 2) % 4;
+                min = room2.getTop();
+                max = room2.getBottom();
+                index = 1;
+            }
+            start = this._placeInWall(room1, dirIndex1); /* corridor will start here */
+            if (!start) {
+                return false;
+            }
+            if (start[index] >= min && start[index] <= max) { /* possible to connect with straight line (I-like) */
+                end = start.slice();
+                let value = 0;
+                switch (dirIndex2) {
+                    case 0:
+                        value = room2.getTop() - 1;
+                        break;
+                    case 1:
+                        value = room2.getRight() + 1;
+                        break;
+                    case 2:
+                        value = room2.getBottom() + 1;
+                        break;
+                    case 3:
+                        value = room2.getLeft() - 1;
+                        break;
+                }
+                end[(index + 1) % 2] = value;
+                this._digLine([start, end]);
+            }
+            else if (start[index] < min - 1 || start[index] > max + 1) { /* need to switch target wall (L-like) */
+                let diff = start[index] - center2[index];
+                let rotation = 0;
+                switch (dirIndex2) {
+                    case 0:
+                    case 1:
+                        rotation = (diff < 0 ? 3 : 1);
+                        break;
+                    case 2:
+                    case 3:
+                        rotation = (diff < 0 ? 1 : 3);
+                        break;
+                }
+                dirIndex2 = (dirIndex2 + rotation) % 4;
+                end = this._placeInWall(room2, dirIndex2);
+                if (!end) {
+                    return false;
+                }
+                let mid = [0, 0];
+                mid[index] = start[index];
+                let index2 = (index + 1) % 2;
+                mid[index2] = end[index2];
+                this._digLine([start, mid, end]);
+            }
+            else { /* use current wall pair, but adjust the line in the middle (S-like) */
+                let index2 = (index + 1) % 2;
+                end = this._placeInWall(room2, dirIndex2);
+                if (!end) {
+                    return false;
+                }
+                let mid = Math.round((end[index2] + start[index2]) / 2);
+                let mid1 = [0, 0];
+                let mid2 = [0, 0];
+                mid1[index] = start[index];
+                mid1[index2] = mid;
+                mid2[index] = end[index];
+                mid2[index2] = mid;
+                this._digLine([start, mid1, mid2, end]);
+            }
+            room1.addDoor(start[0], start[1]);
+            room2.addDoor(end[0], end[1]);
+            index = this._unconnected.indexOf(room1);
+            if (index != -1) {
+                this._unconnected.splice(index, 1);
+                this._connected.push(room1);
+            }
+            index = this._unconnected.indexOf(room2);
+            if (index != -1) {
+                this._unconnected.splice(index, 1);
+                this._connected.push(room2);
+            }
+            return true;
+        }
+        _placeInWall(room, dirIndex) {
+            let start = [0, 0];
+            let dir = [0, 0];
+            let length = 0;
+            switch (dirIndex) {
+                case 0:
+                    dir = [1, 0];
+                    start = [room.getLeft(), room.getTop() - 1];
+                    length = room.getRight() - room.getLeft() + 1;
+                    break;
+                case 1:
+                    dir = [0, 1];
+                    start = [room.getRight() + 1, room.getTop()];
+                    length = room.getBottom() - room.getTop() + 1;
+                    break;
+                case 2:
+                    dir = [1, 0];
+                    start = [room.getLeft(), room.getBottom() + 1];
+                    length = room.getRight() - room.getLeft() + 1;
+                    break;
+                case 3:
+                    dir = [0, 1];
+                    start = [room.getLeft() - 1, room.getTop()];
+                    length = room.getBottom() - room.getTop() + 1;
+                    break;
+            }
+            let avail = [];
+            let lastBadIndex = -2;
+            for (let i = 0; i < length; i++) {
+                let x = start[0] + i * dir[0];
+                let y = start[1] + i * dir[1];
+                avail.push(null);
+                let isWall = (this._map[x][y] == 1);
+                if (isWall) {
+                    if (lastBadIndex != i - 1) {
+                        avail[i] = [x, y];
+                    }
+                }
+                else {
+                    lastBadIndex = i;
+                    if (i) {
+                        avail[i - 1] = null;
+                    }
+                }
+            }
+            for (let i = avail.length - 1; i >= 0; i--) {
+                if (!avail[i]) {
+                    avail.splice(i, 1);
+                }
+            }
+            return (avail.length ? RNG$1.getItem(avail) : null);
+        }
+        /**
+         * Dig a polyline.
+         */
+        _digLine(points) {
+            for (let i = 1; i < points.length; i++) {
+                let start = points[i - 1];
+                let end = points[i];
+                let corridor = new Corridor(start[0], start[1], end[0], end[1]);
+                corridor.create(this._digCallback);
+                this._corridors.push(corridor);
+            }
+        }
+        _digCallback(x, y, value) {
+            this._map[x][y] = value;
+            if (value == 0) {
+                this._dug++;
+            }
+        }
+        _isWallCallback(x, y) {
+            if (x < 0 || y < 0 || x >= this._width || y >= this._height) {
+                return false;
+            }
+            return (this._map[x][y] == 1);
+        }
+        _canBeDugCallback(x, y) {
+            if (x < 1 || y < 1 || x + 1 >= this._width || y + 1 >= this._height) {
+                return false;
+            }
+            return (this._map[x][y] == 1);
+        }
+    }
+
+    /**
+     * @class Cellular automaton map generator
+     * @augments ROT.Map
+     * @param {int} [width=ROT.DEFAULT_WIDTH]
+     * @param {int} [height=ROT.DEFAULT_HEIGHT]
+     * @param {object} [options] Options
+     * @param {int[]} [options.born] List of neighbor counts for a new cell to be born in empty space
+     * @param {int[]} [options.survive] List of neighbor counts for an existing  cell to survive
+     * @param {int} [options.topology] Topology 4 or 6 or 8
+     */
+    class Cellular extends Map {
+        constructor(width, height, options = {}) {
+            super(width, height);
+            this._options = {
+                born: [5, 6, 7, 8],
+                survive: [4, 5, 6, 7, 8],
+                topology: 8
+            };
+            this.setOptions(options);
+            this._dirs = DIRS[this._options.topology];
+            this._map = this._fillMap(0);
+        }
+        /**
+         * Fill the map with random values
+         * @param {float} probability Probability for a cell to become alive; 0 = all empty, 1 = all full
+         */
+        randomize(probability) {
+            for (let i = 0; i < this._width; i++) {
+                for (let j = 0; j < this._height; j++) {
+                    this._map[i][j] = (RNG$1.getUniform() < probability ? 1 : 0);
+                }
+            }
+            return this;
+        }
+        /**
+         * Change options.
+         * @see ROT.Map.Cellular
+         */
+        setOptions(options) { Object.assign(this._options, options); }
+        set(x, y, value) { this._map[x][y] = value; }
+        create(callback) {
+            let newMap = this._fillMap(0);
+            let born = this._options.born;
+            let survive = this._options.survive;
+            for (let j = 0; j < this._height; j++) {
+                let widthStep = 1;
+                let widthStart = 0;
+                if (this._options.topology == 6) {
+                    widthStep = 2;
+                    widthStart = j % 2;
+                }
+                for (let i = widthStart; i < this._width; i += widthStep) {
+                    let cur = this._map[i][j];
+                    let ncount = this._getNeighbors(i, j);
+                    if (cur && survive.indexOf(ncount) != -1) { /* survive */
+                        newMap[i][j] = 1;
+                    }
+                    else if (!cur && born.indexOf(ncount) != -1) { /* born */
+                        newMap[i][j] = 1;
+                    }
+                }
+            }
+            this._map = newMap;
+            callback && this._serviceCallback(callback);
+        }
+        _serviceCallback(callback) {
+            for (let j = 0; j < this._height; j++) {
+                let widthStep = 1;
+                let widthStart = 0;
+                if (this._options.topology == 6) {
+                    widthStep = 2;
+                    widthStart = j % 2;
+                }
+                for (let i = widthStart; i < this._width; i += widthStep) {
+                    callback(i, j, this._map[i][j]);
+                }
+            }
+        }
+        /**
+         * Get neighbor count at [i,j] in this._map
+         */
+        _getNeighbors(cx, cy) {
+            let result = 0;
+            for (let i = 0; i < this._dirs.length; i++) {
+                let dir = this._dirs[i];
+                let x = cx + dir[0];
+                let y = cy + dir[1];
+                if (x < 0 || x >= this._width || y < 0 || y >= this._height) {
+                    continue;
+                }
+                result += (this._map[x][y] == 1 ? 1 : 0);
+            }
+            return result;
+        }
+        /**
+         * Make sure every non-wall space is accessible.
+         * @param {function} callback to call to display map when do
+         * @param {int} value to consider empty space - defaults to 0
+         * @param {function} callback to call when a new connection is made
+         */
+        connect(callback, value, connectionCallback) {
+            if (!value)
+                value = 0;
+            let allFreeSpace = [];
+            let notConnected = {};
+            // find all free space
+            let widthStep = 1;
+            let widthStarts = [0, 0];
+            if (this._options.topology == 6) {
+                widthStep = 2;
+                widthStarts = [0, 1];
+            }
+            for (let y = 0; y < this._height; y++) {
+                for (let x = widthStarts[y % 2]; x < this._width; x += widthStep) {
+                    if (this._freeSpace(x, y, value)) {
+                        let p = [x, y];
+                        notConnected[this._pointKey(p)] = p;
+                        allFreeSpace.push([x, y]);
+                    }
+                }
+            }
+            let start = allFreeSpace[RNG$1.getUniformInt(0, allFreeSpace.length - 1)];
+            let key = this._pointKey(start);
+            let connected = {};
+            connected[key] = start;
+            delete notConnected[key];
+            // find what's connected to the starting point
+            this._findConnected(connected, notConnected, [start], false, value);
+            while (Object.keys(notConnected).length > 0) {
+                // find two points from notConnected to connected
+                let p = this._getFromTo(connected, notConnected);
+                let from = p[0]; // notConnected
+                let to = p[1]; // connected
+                // find everything connected to the starting point
+                let local = {};
+                local[this._pointKey(from)] = from;
+                this._findConnected(local, notConnected, [from], true, value);
+                // connect to a connected cell
+                let tunnelFn = (this._options.topology == 6 ? this._tunnelToConnected6 : this._tunnelToConnected);
+                tunnelFn.call(this, to, from, connected, notConnected, value, connectionCallback);
+                // now all of local is connected
+                for (let k in local) {
+                    let pp = local[k];
+                    this._map[pp[0]][pp[1]] = value;
+                    connected[k] = pp;
+                    delete notConnected[k];
+                }
+            }
+            callback && this._serviceCallback(callback);
+        }
+        /**
+         * Find random points to connect. Search for the closest point in the larger space.
+         * This is to minimize the length of the passage while maintaining good performance.
+         */
+        _getFromTo(connected, notConnected) {
+            let from = [0, 0], to = [0, 0], d;
+            let connectedKeys = Object.keys(connected);
+            let notConnectedKeys = Object.keys(notConnected);
+            for (let i = 0; i < 5; i++) {
+                if (connectedKeys.length < notConnectedKeys.length) {
+                    let keys = connectedKeys;
+                    to = connected[keys[RNG$1.getUniformInt(0, keys.length - 1)]];
+                    from = this._getClosest(to, notConnected);
+                }
+                else {
+                    let keys = notConnectedKeys;
+                    from = notConnected[keys[RNG$1.getUniformInt(0, keys.length - 1)]];
+                    to = this._getClosest(from, connected);
+                }
+                d = (from[0] - to[0]) * (from[0] - to[0]) + (from[1] - to[1]) * (from[1] - to[1]);
+                if (d < 64) {
+                    break;
+                }
+            }
+            // console.log(">>> connected=" + to + " notConnected=" + from + " dist=" + d);
+            return [from, to];
+        }
+        _getClosest(point, space) {
+            let minPoint = null;
+            let minDist = null;
+            for (let k in space) {
+                let p = space[k];
+                let d = (p[0] - point[0]) * (p[0] - point[0]) + (p[1] - point[1]) * (p[1] - point[1]);
+                if (minDist == null || d < minDist) {
+                    minDist = d;
+                    minPoint = p;
+                }
+            }
+            return minPoint;
+        }
+        _findConnected(connected, notConnected, stack, keepNotConnected, value) {
+            while (stack.length > 0) {
+                let p = stack.splice(0, 1)[0];
+                let tests;
+                if (this._options.topology == 6) {
+                    tests = [
+                        [p[0] + 2, p[1]],
+                        [p[0] + 1, p[1] - 1],
+                        [p[0] - 1, p[1] - 1],
+                        [p[0] - 2, p[1]],
+                        [p[0] - 1, p[1] + 1],
+                        [p[0] + 1, p[1] + 1],
+                    ];
+                }
+                else {
+                    tests = [
+                        [p[0] + 1, p[1]],
+                        [p[0] - 1, p[1]],
+                        [p[0], p[1] + 1],
+                        [p[0], p[1] - 1]
+                    ];
+                }
+                for (let i = 0; i < tests.length; i++) {
+                    let key = this._pointKey(tests[i]);
+                    if (connected[key] == null && this._freeSpace(tests[i][0], tests[i][1], value)) {
+                        connected[key] = tests[i];
+                        if (!keepNotConnected) {
+                            delete notConnected[key];
+                        }
+                        stack.push(tests[i]);
+                    }
+                }
+            }
+        }
+        _tunnelToConnected(to, from, connected, notConnected, value, connectionCallback) {
+            let a, b;
+            if (from[0] < to[0]) {
+                a = from;
+                b = to;
+            }
+            else {
+                a = to;
+                b = from;
+            }
+            for (let xx = a[0]; xx <= b[0]; xx++) {
+                this._map[xx][a[1]] = value;
+                let p = [xx, a[1]];
+                let pkey = this._pointKey(p);
+                connected[pkey] = p;
+                delete notConnected[pkey];
+            }
+            if (connectionCallback && a[0] < b[0]) {
+                connectionCallback(a, [b[0], a[1]]);
+            }
+            // x is now fixed
+            let x = b[0];
+            if (from[1] < to[1]) {
+                a = from;
+                b = to;
+            }
+            else {
+                a = to;
+                b = from;
+            }
+            for (let yy = a[1]; yy < b[1]; yy++) {
+                this._map[x][yy] = value;
+                let p = [x, yy];
+                let pkey = this._pointKey(p);
+                connected[pkey] = p;
+                delete notConnected[pkey];
+            }
+            if (connectionCallback && a[1] < b[1]) {
+                connectionCallback([b[0], a[1]], [b[0], b[1]]);
+            }
+        }
+        _tunnelToConnected6(to, from, connected, notConnected, value, connectionCallback) {
+            let a, b;
+            if (from[0] < to[0]) {
+                a = from;
+                b = to;
+            }
+            else {
+                a = to;
+                b = from;
+            }
+            // tunnel diagonally until horizontally level
+            let xx = a[0];
+            let yy = a[1];
+            while (!(xx == b[0] && yy == b[1])) {
+                let stepWidth = 2;
+                if (yy < b[1]) {
+                    yy++;
+                    stepWidth = 1;
+                }
+                else if (yy > b[1]) {
+                    yy--;
+                    stepWidth = 1;
+                }
+                if (xx < b[0]) {
+                    xx += stepWidth;
+                }
+                else if (xx > b[0]) {
+                    xx -= stepWidth;
+                }
+                else if (b[1] % 2) {
+                    // Won't step outside map if destination on is map's right edge
+                    xx -= stepWidth;
+                }
+                else {
+                    // ditto for left edge
+                    xx += stepWidth;
+                }
+                this._map[xx][yy] = value;
+                let p = [xx, yy];
+                let pkey = this._pointKey(p);
+                connected[pkey] = p;
+                delete notConnected[pkey];
+            }
+            if (connectionCallback) {
+                connectionCallback(from, to);
+            }
+        }
+        _freeSpace(x, y, value) {
+            return x >= 0 && x < this._width && y >= 0 && y < this._height && this._map[x][y] == value;
+        }
+        _pointKey(p) { return p[0] + "." + p[1]; }
+    }
+
+    const FEATURES = {
+        "room": Room,
+        "corridor": Corridor
+    };
+    /**
+     * Random dungeon generator using human-like digging patterns.
+     * Heavily based on Mike Anderson's ideas from the "Tyrant" algo, mentioned at
+     * http://www.roguebasin.roguelikedevelopment.org/index.php?title=Dungeon-Building_Algorithm.
+     */
+    class Digger extends Dungeon {
+        constructor(width, height, options = {}) {
+            super(width, height);
+            this._options = Object.assign({
+                roomWidth: [3, 9],
+                roomHeight: [3, 5],
+                corridorLength: [3, 10],
+                dugPercentage: 0.2,
+                timeLimit: 1000 /* we stop after this much time has passed (msec) */
+            }, options);
+            this._features = {
+                "room": 4,
+                "corridor": 4
+            };
+            this._map = [];
+            this._featureAttempts = 20; /* how many times do we try to create a feature on a suitable wall */
+            this._walls = {}; /* these are available for digging */
+            this._dug = 0;
+            this._digCallback = this._digCallback.bind(this);
+            this._canBeDugCallback = this._canBeDugCallback.bind(this);
+            this._isWallCallback = this._isWallCallback.bind(this);
+            this._priorityWallCallback = this._priorityWallCallback.bind(this);
+        }
+        create(callback) {
+            this._rooms = [];
+            this._corridors = [];
+            this._map = this._fillMap(1);
+            this._walls = {};
+            this._dug = 0;
+            let area = (this._width - 2) * (this._height - 2);
+            this._firstRoom();
+            let t1 = Date.now();
+            let priorityWalls;
+            do {
+                priorityWalls = 0;
+                let t2 = Date.now();
+                if (t2 - t1 > this._options.timeLimit) {
+                    break;
+                }
+                /* find a good wall */
+                let wall = this._findWall();
+                if (!wall) {
+                    break;
+                } /* no more walls */
+                let parts = wall.split(",");
+                let x = parseInt(parts[0]);
+                let y = parseInt(parts[1]);
+                let dir = this._getDiggingDirection(x, y);
+                if (!dir) {
+                    continue;
+                } /* this wall is not suitable */
+                //		console.log("wall", x, y);
+                /* try adding a feature */
+                let featureAttempts = 0;
+                do {
+                    featureAttempts++;
+                    if (this._tryFeature(x, y, dir[0], dir[1])) { /* feature added */
+                        //if (this._rooms.length + this._corridors.length == 2) { this._rooms[0].addDoor(x, y); } /* first room oficially has doors */
+                        this._removeSurroundingWalls(x, y);
+                        this._removeSurroundingWalls(x - dir[0], y - dir[1]);
+                        break;
+                    }
+                } while (featureAttempts < this._featureAttempts);
+                for (let id in this._walls) {
+                    if (this._walls[id] > 1) {
+                        priorityWalls++;
+                    }
+                }
+            } while (this._dug / area < this._options.dugPercentage || priorityWalls); /* fixme number of priority walls */
+            this._addDoors();
+            if (callback) {
+                for (let i = 0; i < this._width; i++) {
+                    for (let j = 0; j < this._height; j++) {
+                        callback(i, j, this._map[i][j]);
+                    }
+                }
+            }
+            this._walls = {};
+            this._map = [];
+            return this;
+        }
+        _digCallback(x, y, value) {
+            if (value == 0 || value == 2) { /* empty */
+                this._map[x][y] = 0;
+                this._dug++;
+            }
+            else { /* wall */
+                this._walls[x + "," + y] = 1;
+            }
+        }
+        _isWallCallback(x, y) {
+            if (x < 0 || y < 0 || x >= this._width || y >= this._height) {
+                return false;
+            }
+            return (this._map[x][y] == 1);
+        }
+        _canBeDugCallback(x, y) {
+            if (x < 1 || y < 1 || x + 1 >= this._width || y + 1 >= this._height) {
+                return false;
+            }
+            return (this._map[x][y] == 1);
+        }
+        _priorityWallCallback(x, y) { this._walls[x + "," + y] = 2; }
+        ;
+        _firstRoom() {
+            let cx = Math.floor(this._width / 2);
+            let cy = Math.floor(this._height / 2);
+            let room = Room.createRandomCenter(cx, cy, this._options);
+            this._rooms.push(room);
+            room.create(this._digCallback);
+        }
+        /**
+         * Get a suitable wall
+         */
+        _findWall() {
+            let prio1 = [];
+            let prio2 = [];
+            for (let id in this._walls) {
+                let prio = this._walls[id];
+                if (prio == 2) {
+                    prio2.push(id);
+                }
+                else {
+                    prio1.push(id);
+                }
+            }
+            let arr = (prio2.length ? prio2 : prio1);
+            if (!arr.length) {
+                return null;
+            } /* no walls :/ */
+            let id = RNG$1.getItem(arr.sort()); // sort to make the order deterministic
+            delete this._walls[id];
+            return id;
+        }
+        /**
+         * Tries adding a feature
+         * @returns {bool} was this a successful try?
+         */
+        _tryFeature(x, y, dx, dy) {
+            let featureName = RNG$1.getWeightedValue(this._features);
+            let ctor = FEATURES[featureName];
+            let feature = ctor.createRandomAt(x, y, dx, dy, this._options);
+            if (!feature.isValid(this._isWallCallback, this._canBeDugCallback)) {
+                //		console.log("not valid");
+                //		feature.debug();
+                return false;
+            }
+            feature.create(this._digCallback);
+            //	feature.debug();
+            if (feature instanceof Room) {
+                this._rooms.push(feature);
+            }
+            if (feature instanceof Corridor) {
+                feature.createPriorityWalls(this._priorityWallCallback);
+                this._corridors.push(feature);
+            }
+            return true;
+        }
+        _removeSurroundingWalls(cx, cy) {
+            let deltas = DIRS[4];
+            for (let i = 0; i < deltas.length; i++) {
+                let delta = deltas[i];
+                let x = cx + delta[0];
+                let y = cy + delta[1];
+                delete this._walls[x + "," + y];
+                x = cx + 2 * delta[0];
+                y = cy + 2 * delta[1];
+                delete this._walls[x + "," + y];
+            }
+        }
+        /**
+         * Returns vector in "digging" direction, or false, if this does not exist (or is not unique)
+         */
+        _getDiggingDirection(cx, cy) {
+            if (cx <= 0 || cy <= 0 || cx >= this._width - 1 || cy >= this._height - 1) {
+                return null;
+            }
+            let result = null;
+            let deltas = DIRS[4];
+            for (let i = 0; i < deltas.length; i++) {
+                let delta = deltas[i];
+                let x = cx + delta[0];
+                let y = cy + delta[1];
+                if (!this._map[x][y]) { /* there already is another empty neighbor! */
+                    if (result) {
+                        return null;
+                    }
+                    result = delta;
+                }
+            }
+            /* no empty neighbor */
+            if (!result) {
+                return null;
+            }
+            return [-result[0], -result[1]];
+        }
+        /**
+         * Find empty spaces surrounding rooms, and apply doors.
+         */
+        _addDoors() {
+            let data = this._map;
+            function isWallCallback(x, y) {
+                return (data[x][y] == 1);
+            }
+            for (let i = 0; i < this._rooms.length; i++) {
+                let room = this._rooms[i];
+                room.clearDoors();
+                room.addDoors(isWallCallback);
+            }
+        }
+    }
+
+    /**
+     * Join lists with "i" and "i+1"
+     */
+    function addToList(i, L, R) {
+        R[L[i + 1]] = R[i];
+        L[R[i]] = L[i + 1];
+        R[i] = i + 1;
+        L[i + 1] = i;
+    }
+    /**
+     * Remove "i" from its list
+     */
+    function removeFromList(i, L, R) {
+        R[L[i]] = R[i];
+        L[R[i]] = L[i];
+        R[i] = i;
+        L[i] = i;
+    }
+    /**
+     * Maze generator - Eller's algorithm
+     * See http://homepages.cwi.nl/~tromp/maze.html for explanation
+     */
+    class EllerMaze extends Map {
+        create(callback) {
+            let map = this._fillMap(1);
+            let w = Math.ceil((this._width - 2) / 2);
+            let rand = 9 / 24;
+            let L = [];
+            let R = [];
+            for (let i = 0; i < w; i++) {
+                L.push(i);
+                R.push(i);
+            }
+            L.push(w - 1); /* fake stop-block at the right side */
+            let j;
+            for (j = 1; j + 3 < this._height; j += 2) {
+                /* one row */
+                for (let i = 0; i < w; i++) {
+                    /* cell coords (will be always empty) */
+                    let x = 2 * i + 1;
+                    let y = j;
+                    map[x][y] = 0;
+                    /* right connection */
+                    if (i != L[i + 1] && RNG$1.getUniform() > rand) {
+                        addToList(i, L, R);
+                        map[x + 1][y] = 0;
+                    }
+                    /* bottom connection */
+                    if (i != L[i] && RNG$1.getUniform() > rand) {
+                        /* remove connection */
+                        removeFromList(i, L, R);
+                    }
+                    else {
+                        /* create connection */
+                        map[x][y + 1] = 0;
+                    }
+                }
+            }
+            /* last row */
+            for (let i = 0; i < w; i++) {
+                /* cell coords (will be always empty) */
+                let x = 2 * i + 1;
+                let y = j;
+                map[x][y] = 0;
+                /* right connection */
+                if (i != L[i + 1] && (i == L[i] || RNG$1.getUniform() > rand)) {
+                    /* dig right also if the cell is separated, so it gets connected to the rest of maze */
+                    addToList(i, L, R);
+                    map[x + 1][y] = 0;
+                }
+                removeFromList(i, L, R);
+            }
+            for (let i = 0; i < this._width; i++) {
+                for (let j = 0; j < this._height; j++) {
+                    callback(i, j, map[i][j]);
+                }
+            }
+            return this;
+        }
+    }
+
+    /**
+     * @class Recursively divided maze, http://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_division_method
+     * @augments ROT.Map
+     */
+    class DividedMaze extends Map {
+        constructor() {
+            super(...arguments);
+            this._stack = [];
+            this._map = [];
+        }
+        create(callback) {
+            let w = this._width;
+            let h = this._height;
+            this._map = [];
+            for (let i = 0; i < w; i++) {
+                this._map.push([]);
+                for (let j = 0; j < h; j++) {
+                    let border = (i == 0 || j == 0 || i + 1 == w || j + 1 == h);
+                    this._map[i].push(border ? 1 : 0);
+                }
+            }
+            this._stack = [
+                [1, 1, w - 2, h - 2]
+            ];
+            this._process();
+            for (let i = 0; i < w; i++) {
+                for (let j = 0; j < h; j++) {
+                    callback(i, j, this._map[i][j]);
+                }
+            }
+            this._map = [];
+            return this;
+        }
+        _process() {
+            while (this._stack.length) {
+                let room = this._stack.shift(); /* [left, top, right, bottom] */
+                this._partitionRoom(room);
+            }
+        }
+        _partitionRoom(room) {
+            let availX = [];
+            let availY = [];
+            for (let i = room[0] + 1; i < room[2]; i++) {
+                let top = this._map[i][room[1] - 1];
+                let bottom = this._map[i][room[3] + 1];
+                if (top && bottom && !(i % 2)) {
+                    availX.push(i);
+                }
+            }
+            for (let j = room[1] + 1; j < room[3]; j++) {
+                let left = this._map[room[0] - 1][j];
+                let right = this._map[room[2] + 1][j];
+                if (left && right && !(j % 2)) {
+                    availY.push(j);
+                }
+            }
+            if (!availX.length || !availY.length) {
+                return;
+            }
+            let x = RNG$1.getItem(availX);
+            let y = RNG$1.getItem(availY);
+            this._map[x][y] = 1;
+            let walls = [];
+            let w = [];
+            walls.push(w); /* left part */
+            for (let i = room[0]; i < x; i++) {
+                this._map[i][y] = 1;
+                w.push([i, y]);
+            }
+            w = [];
+            walls.push(w); /* right part */
+            for (let i = x + 1; i <= room[2]; i++) {
+                this._map[i][y] = 1;
+                w.push([i, y]);
+            }
+            w = [];
+            walls.push(w); /* top part */
+            for (let j = room[1]; j < y; j++) {
+                this._map[x][j] = 1;
+                w.push([x, j]);
+            }
+            w = [];
+            walls.push(w); /* bottom part */
+            for (let j = y + 1; j <= room[3]; j++) {
+                this._map[x][j] = 1;
+                w.push([x, j]);
+            }
+            let solid = RNG$1.getItem(walls);
+            for (let i = 0; i < walls.length; i++) {
+                let w = walls[i];
+                if (w == solid) {
+                    continue;
+                }
+                let hole = RNG$1.getItem(w);
+                this._map[hole[0]][hole[1]] = 0;
+            }
+            this._stack.push([room[0], room[1], x - 1, y - 1]); /* left top */
+            this._stack.push([x + 1, room[1], room[2], y - 1]); /* right top */
+            this._stack.push([room[0], y + 1, x - 1, room[3]]); /* left bottom */
+            this._stack.push([x + 1, y + 1, room[2], room[3]]); /* right bottom */
+        }
+    }
+
+    /**
+     * Icey's Maze generator
+     * See http://www.roguebasin.roguelikedevelopment.org/index.php?title=Simple_maze for explanation
+     */
+    class IceyMaze extends Map {
+        constructor(width, height, regularity = 0) {
+            super(width, height);
+            this._regularity = regularity;
+            this._map = [];
+        }
+        create(callback) {
+            let width = this._width;
+            let height = this._height;
+            let map = this._fillMap(1);
+            width -= (width % 2 ? 1 : 2);
+            height -= (height % 2 ? 1 : 2);
+            let cx = 0;
+            let cy = 0;
+            let nx = 0;
+            let ny = 0;
+            let done = 0;
+            let blocked = false;
+            let dirs = [
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0]
+            ];
+            do {
+                cx = 1 + 2 * Math.floor(RNG$1.getUniform() * (width - 1) / 2);
+                cy = 1 + 2 * Math.floor(RNG$1.getUniform() * (height - 1) / 2);
+                if (!done) {
+                    map[cx][cy] = 0;
+                }
+                if (!map[cx][cy]) {
+                    this._randomize(dirs);
+                    do {
+                        if (Math.floor(RNG$1.getUniform() * (this._regularity + 1)) == 0) {
+                            this._randomize(dirs);
+                        }
+                        blocked = true;
+                        for (let i = 0; i < 4; i++) {
+                            nx = cx + dirs[i][0] * 2;
+                            ny = cy + dirs[i][1] * 2;
+                            if (this._isFree(map, nx, ny, width, height)) {
+                                map[nx][ny] = 0;
+                                map[cx + dirs[i][0]][cy + dirs[i][1]] = 0;
+                                cx = nx;
+                                cy = ny;
+                                blocked = false;
+                                done++;
+                                break;
+                            }
+                        }
+                    } while (!blocked);
+                }
+            } while (done + 1 < width * height / 4);
+            for (let i = 0; i < this._width; i++) {
+                for (let j = 0; j < this._height; j++) {
+                    callback(i, j, map[i][j]);
+                }
+            }
+            this._map = [];
+            return this;
+        }
+        _randomize(dirs) {
+            for (let i = 0; i < 4; i++) {
+                dirs[i][0] = 0;
+                dirs[i][1] = 0;
+            }
+            switch (Math.floor(RNG$1.getUniform() * 4)) {
+                case 0:
+                    dirs[0][0] = -1;
+                    dirs[1][0] = 1;
+                    dirs[2][1] = -1;
+                    dirs[3][1] = 1;
+                    break;
+                case 1:
+                    dirs[3][0] = -1;
+                    dirs[2][0] = 1;
+                    dirs[1][1] = -1;
+                    dirs[0][1] = 1;
+                    break;
+                case 2:
+                    dirs[2][0] = -1;
+                    dirs[3][0] = 1;
+                    dirs[0][1] = -1;
+                    dirs[1][1] = 1;
+                    break;
+                case 3:
+                    dirs[1][0] = -1;
+                    dirs[0][0] = 1;
+                    dirs[3][1] = -1;
+                    dirs[2][1] = 1;
+                    break;
+            }
+        }
+        _isFree(map, x, y, width, height) {
+            if (x < 1 || y < 1 || x >= width || y >= height) {
+                return false;
+            }
+            return map[x][y];
+        }
+    }
+
+    /**
+     * Dungeon generator which uses the "orginal" Rogue dungeon generation algorithm. See http://kuoi.com/~kamikaze/GameDesign/art07_rogue_dungeon.php
+     * @author hyakugei
+     */
+    class Rogue extends Map {
+        constructor(width, height, options) {
+            super(width, height);
+            this.map = [];
+            this.rooms = [];
+            this.connectedCells = [];
+            options = Object.assign({
+                cellWidth: 3,
+                cellHeight: 3 //     ie. as an array with min-max values for each direction....
+            }, options);
+            /*
+            Set the room sizes according to the over-all width of the map,
+            and the cell sizes.
+            */
+            if (!options.hasOwnProperty("roomWidth")) {
+                options["roomWidth"] = this._calculateRoomSize(this._width, options["cellWidth"]);
+            }
+            if (!options.hasOwnProperty("roomHeight")) {
+                options["roomHeight"] = this._calculateRoomSize(this._height, options["cellHeight"]);
+            }
+            this._options = options;
+        }
+        create(callback) {
+            this.map = this._fillMap(1);
+            this.rooms = [];
+            this.connectedCells = [];
+            this._initRooms();
+            this._connectRooms();
+            this._connectUnconnectedRooms();
+            this._createRandomRoomConnections();
+            this._createRooms();
+            this._createCorridors();
+            if (callback) {
+                for (let i = 0; i < this._width; i++) {
+                    for (let j = 0; j < this._height; j++) {
+                        callback(i, j, this.map[i][j]);
+                    }
+                }
+            }
+            return this;
+        }
+        _calculateRoomSize(size, cell) {
+            let max = Math.floor((size / cell) * 0.8);
+            let min = Math.floor((size / cell) * 0.25);
+            if (min < 2) {
+                min = 2;
+            }
+            if (max < 2) {
+                max = 2;
+            }
+            return [min, max];
+        }
+        _initRooms() {
+            // create rooms array. This is the "grid" list from the algo.
+            for (let i = 0; i < this._options.cellWidth; i++) {
+                this.rooms.push([]);
+                for (let j = 0; j < this._options.cellHeight; j++) {
+                    this.rooms[i].push({ "x": 0, "y": 0, "width": 0, "height": 0, "connections": [], "cellx": i, "celly": j });
+                }
+            }
+        }
+        _connectRooms() {
+            //pick random starting grid
+            let cgx = RNG$1.getUniformInt(0, this._options.cellWidth - 1);
+            let cgy = RNG$1.getUniformInt(0, this._options.cellHeight - 1);
+            let idx;
+            let ncgx;
+            let ncgy;
+            let found = false;
+            let room;
+            let otherRoom;
+            let dirToCheck;
+            // find  unconnected neighbour cells
+            do {
+                //dirToCheck = [0, 1, 2, 3, 4, 5, 6, 7];
+                dirToCheck = [0, 2, 4, 6];
+                dirToCheck = RNG$1.shuffle(dirToCheck);
+                do {
+                    found = false;
+                    idx = dirToCheck.pop();
+                    ncgx = cgx + DIRS[8][idx][0];
+                    ncgy = cgy + DIRS[8][idx][1];
+                    if (ncgx < 0 || ncgx >= this._options.cellWidth) {
+                        continue;
+                    }
+                    if (ncgy < 0 || ncgy >= this._options.cellHeight) {
+                        continue;
+                    }
+                    room = this.rooms[cgx][cgy];
+                    if (room["connections"].length > 0) {
+                        // as long as this room doesn't already coonect to me, we are ok with it.
+                        if (room["connections"][0][0] == ncgx && room["connections"][0][1] == ncgy) {
+                            break;
+                        }
+                    }
+                    otherRoom = this.rooms[ncgx][ncgy];
+                    if (otherRoom["connections"].length == 0) {
+                        otherRoom["connections"].push([cgx, cgy]);
+                        this.connectedCells.push([ncgx, ncgy]);
+                        cgx = ncgx;
+                        cgy = ncgy;
+                        found = true;
+                    }
+                } while (dirToCheck.length > 0 && found == false);
+            } while (dirToCheck.length > 0);
+        }
+        _connectUnconnectedRooms() {
+            //While there are unconnected rooms, try to connect them to a random connected neighbor
+            //(if a room has no connected neighbors yet, just keep cycling, you'll fill out to it eventually).
+            let cw = this._options.cellWidth;
+            let ch = this._options.cellHeight;
+            this.connectedCells = RNG$1.shuffle(this.connectedCells);
+            let room;
+            let otherRoom;
+            let validRoom;
+            for (let i = 0; i < this._options.cellWidth; i++) {
+                for (let j = 0; j < this._options.cellHeight; j++) {
+                    room = this.rooms[i][j];
+                    if (room["connections"].length == 0) {
+                        let directions = [0, 2, 4, 6];
+                        directions = RNG$1.shuffle(directions);
+                        validRoom = false;
+                        do {
+                            let dirIdx = directions.pop();
+                            let newI = i + DIRS[8][dirIdx][0];
+                            let newJ = j + DIRS[8][dirIdx][1];
+                            if (newI < 0 || newI >= cw || newJ < 0 || newJ >= ch) {
+                                continue;
+                            }
+                            otherRoom = this.rooms[newI][newJ];
+                            validRoom = true;
+                            if (otherRoom["connections"].length == 0) {
+                                break;
+                            }
+                            for (let k = 0; k < otherRoom["connections"].length; k++) {
+                                if (otherRoom["connections"][k][0] == i && otherRoom["connections"][k][1] == j) {
+                                    validRoom = false;
+                                    break;
+                                }
+                            }
+                            if (validRoom) {
+                                break;
+                            }
+                        } while (directions.length);
+                        if (validRoom) {
+                            room["connections"].push([otherRoom["cellx"], otherRoom["celly"]]);
+                        }
+                        else {
+                            console.log("-- Unable to connect room.");
+                        }
+                    }
+                }
+            }
+        }
+        _createRandomRoomConnections() {
+            // Empty for now.
+        }
+        _createRooms() {
+            let w = this._width;
+            let h = this._height;
+            let cw = this._options.cellWidth;
+            let ch = this._options.cellHeight;
+            let cwp = Math.floor(this._width / cw);
+            let chp = Math.floor(this._height / ch);
+            let roomw;
+            let roomh;
+            let roomWidth = this._options["roomWidth"];
+            let roomHeight = this._options["roomHeight"];
+            let sx;
+            let sy;
+            let otherRoom;
+            for (let i = 0; i < cw; i++) {
+                for (let j = 0; j < ch; j++) {
+                    sx = cwp * i;
+                    sy = chp * j;
+                    if (sx == 0) {
+                        sx = 1;
+                    }
+                    if (sy == 0) {
+                        sy = 1;
+                    }
+                    roomw = RNG$1.getUniformInt(roomWidth[0], roomWidth[1]);
+                    roomh = RNG$1.getUniformInt(roomHeight[0], roomHeight[1]);
+                    if (j > 0) {
+                        otherRoom = this.rooms[i][j - 1];
+                        while (sy - (otherRoom["y"] + otherRoom["height"]) < 3) {
+                            sy++;
+                        }
+                    }
+                    if (i > 0) {
+                        otherRoom = this.rooms[i - 1][j];
+                        while (sx - (otherRoom["x"] + otherRoom["width"]) < 3) {
+                            sx++;
+                        }
+                    }
+                    let sxOffset = Math.round(RNG$1.getUniformInt(0, cwp - roomw) / 2);
+                    let syOffset = Math.round(RNG$1.getUniformInt(0, chp - roomh) / 2);
+                    while (sx + sxOffset + roomw >= w) {
+                        if (sxOffset) {
+                            sxOffset--;
+                        }
+                        else {
+                            roomw--;
+                        }
+                    }
+                    while (sy + syOffset + roomh >= h) {
+                        if (syOffset) {
+                            syOffset--;
+                        }
+                        else {
+                            roomh--;
+                        }
+                    }
+                    sx = sx + sxOffset;
+                    sy = sy + syOffset;
+                    this.rooms[i][j]["x"] = sx;
+                    this.rooms[i][j]["y"] = sy;
+                    this.rooms[i][j]["width"] = roomw;
+                    this.rooms[i][j]["height"] = roomh;
+                    for (let ii = sx; ii < sx + roomw; ii++) {
+                        for (let jj = sy; jj < sy + roomh; jj++) {
+                            this.map[ii][jj] = 0;
+                        }
+                    }
+                }
+            }
+        }
+        _getWallPosition(aRoom, aDirection) {
+            let rx;
+            let ry;
+            let door;
+            if (aDirection == 1 || aDirection == 3) {
+                rx = RNG$1.getUniformInt(aRoom["x"] + 1, aRoom["x"] + aRoom["width"] - 2);
+                if (aDirection == 1) {
+                    ry = aRoom["y"] - 2;
+                    door = ry + 1;
+                }
+                else {
+                    ry = aRoom["y"] + aRoom["height"] + 1;
+                    door = ry - 1;
+                }
+                this.map[rx][door] = 0; // i'm not setting a specific 'door' tile value right now, just empty space.
+            }
+            else {
+                ry = RNG$1.getUniformInt(aRoom["y"] + 1, aRoom["y"] + aRoom["height"] - 2);
+                if (aDirection == 2) {
+                    rx = aRoom["x"] + aRoom["width"] + 1;
+                    door = rx - 1;
+                }
+                else {
+                    rx = aRoom["x"] - 2;
+                    door = rx + 1;
+                }
+                this.map[door][ry] = 0; // i'm not setting a specific 'door' tile value right now, just empty space.
+            }
+            return [rx, ry];
+        }
+        _drawCorridor(startPosition, endPosition) {
+            let xOffset = endPosition[0] - startPosition[0];
+            let yOffset = endPosition[1] - startPosition[1];
+            let xpos = startPosition[0];
+            let ypos = startPosition[1];
+            let tempDist;
+            let xDir;
+            let yDir;
+            let move; // 2 element array, element 0 is the direction, element 1 is the total value to move.
+            let moves = []; // a list of 2 element arrays
+            let xAbs = Math.abs(xOffset);
+            let yAbs = Math.abs(yOffset);
+            let percent = RNG$1.getUniform(); // used to split the move at different places along the long axis
+            let firstHalf = percent;
+            let secondHalf = 1 - percent;
+            xDir = xOffset > 0 ? 2 : 6;
+            yDir = yOffset > 0 ? 4 : 0;
+            if (xAbs < yAbs) {
+                // move firstHalf of the y offset
+                tempDist = Math.ceil(yAbs * firstHalf);
+                moves.push([yDir, tempDist]);
+                // move all the x offset
+                moves.push([xDir, xAbs]);
+                // move sendHalf of the  y offset
+                tempDist = Math.floor(yAbs * secondHalf);
+                moves.push([yDir, tempDist]);
+            }
+            else {
+                //  move firstHalf of the x offset
+                tempDist = Math.ceil(xAbs * firstHalf);
+                moves.push([xDir, tempDist]);
+                // move all the y offset
+                moves.push([yDir, yAbs]);
+                // move secondHalf of the x offset.
+                tempDist = Math.floor(xAbs * secondHalf);
+                moves.push([xDir, tempDist]);
+            }
+            this.map[xpos][ypos] = 0;
+            while (moves.length > 0) {
+                move = moves.pop();
+                while (move[1] > 0) {
+                    xpos += DIRS[8][move[0]][0];
+                    ypos += DIRS[8][move[0]][1];
+                    this.map[xpos][ypos] = 0;
+                    move[1] = move[1] - 1;
+                }
+            }
+        }
+        _createCorridors() {
+            // Draw Corridors between connected rooms
+            let cw = this._options.cellWidth;
+            let ch = this._options.cellHeight;
+            let room;
+            let connection;
+            let otherRoom;
+            let wall;
+            let otherWall;
+            for (let i = 0; i < cw; i++) {
+                for (let j = 0; j < ch; j++) {
+                    room = this.rooms[i][j];
+                    for (let k = 0; k < room["connections"].length; k++) {
+                        connection = room["connections"][k];
+                        otherRoom = this.rooms[connection[0]][connection[1]];
+                        // figure out what wall our corridor will start one.
+                        // figure out what wall our corridor will end on.
+                        if (otherRoom["cellx"] > room["cellx"]) {
+                            wall = 2;
+                            otherWall = 4;
+                        }
+                        else if (otherRoom["cellx"] < room["cellx"]) {
+                            wall = 4;
+                            otherWall = 2;
+                        }
+                        else if (otherRoom["celly"] > room["celly"]) {
+                            wall = 3;
+                            otherWall = 1;
+                        }
+                        else {
+                            wall = 1;
+                            otherWall = 3;
+                        }
+                        this._drawCorridor(this._getWallPosition(room, wall), this._getWallPosition(otherRoom, otherWall));
+                    }
+                }
+            }
+        }
+    }
+
+    var Map$1 = { Arena, Uniform, Cellular, Digger, EllerMaze, DividedMaze, IceyMaze, Rogue };
+
     /**
      * Base noise generator
      */
@@ -1191,10 +3425,72 @@
      */
 
     console.log('hello dungeon');
+    RNG$1.setSeed(11);
+    const width = 30;
+    const height = 30;
     const d = new Display({
-        width: 11,
-        height: 5
+        width,
+        height,
+        fontSize: 18,
+        forceSquareRatio: true
     });
-    document.body.appendChild(d.getContainer());
+    const container = d.getContainer();
+    container.classList.add('container');
+    document.body.appendChild(container);
+    const gen = new Map$1.Uniform(width, height, {});
+    const map = Array.from({
+        length: width
+    }, () => Array.from({
+        length: height
+    }, () => ({
+        tile: null
+    })));
+    gen.create((x, y, value) => {
+        if (!value) {
+            map[x][y].tile = '.';
+        }
+    });
+    for (let x = 0; x < width; x++) {
+        for (let y = 0; y < height; y++) {
+            const cell = map[x][y];
+            if (cell.tile) {
+                d.draw(x, y, ' ', null, (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD');
+                if (!map[x][y - 1].tile) {
+                    d.draw(x, y - 1, null, null, '#444');
+                }
+            }
+        }
+    }
+    const startPos = gen.getRooms()[0].getCenter();
+    const player = {
+        x: startPos[0],
+        y: startPos[1]
+    };
+    d.draw(player.x, player.y, 'P', '#0F0', null);
+    window.addEventListener('keydown', e => {
+        let newX = player.x;
+        let newY = player.y;
+        switch (e.keyCode) {
+            case KEYS.VK_UP:
+                newY -= 1;
+                break;
+            case KEYS.VK_DOWN:
+                newY += 1;
+                break;
+            case KEYS.VK_LEFT:
+                newX -= 1;
+                break;
+            case KEYS.VK_RIGHT:
+                newX += 1;
+                break;
+        }
+        if (map[newX][newY].tile) {
+            d.draw(player.x, player.y, ' ', null, (player.x % 2) + (player.y % 2) - 1 ? '#EEE' : '#DDD');
+            player.x = newX;
+            player.y = newY;
+            d.draw(player.x, player.y, 'P', '#0F0', null);
+        }
+    });
 
 }());
+//# sourceMappingURL=underground.js.map

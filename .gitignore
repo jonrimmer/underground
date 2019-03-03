@@ -78,3 +78,5 @@ typings/
 .DS_Store
 
 out/
+
+.rpt2_cache/
