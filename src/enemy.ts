@@ -1,6 +1,6 @@
-import { Actor } from './actor';
 import { Display } from 'rot-js';
 import { World } from './world';
+import { Actor } from './types';
 
 export abstract class Enemy implements Actor {
   public isHostile = true;
@@ -20,7 +20,7 @@ export abstract class Enemy implements Actor {
     private world: World
   ) {}
 
-  abstract draw(display: Display): void;
+  abstract draw(display: Display, x: number, y: number): void;
 
   notifyAttack(aggressor: Actor) {
     this.currentTarget = aggressor;
@@ -48,7 +48,7 @@ export class Skeleton extends Enemy {
     super(x, y, 15, 'Skeleton', 5, 5, world);
   }
 
-  draw(display: Display) {
-    display.draw(this.x, this.y, 'S', '#FFF', '#000');
+  draw(display: Display, x: number, y: number) {
+    display.draw(x, y, 'S', '#FFF', '#000');
   }
 }

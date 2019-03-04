@@ -1,7 +1,7 @@
-import { Actor } from './actor';
 import { getKeyPress } from './util';
 import { KEYS, Display } from 'rot-js';
-import { Tile, World } from './world';
+import { World } from './world';
+import { Actor } from './types';
 
 export class Player implements Actor {
   public x: number = 0;
@@ -25,8 +25,8 @@ export class Player implements Actor {
 
   constructor(private world: World) {}
 
-  draw(display: Display) {
-    display.draw(this.x, this.y, '@', '#FFF', '#072');
+  draw(display: Display, x: number, y: number) {
+    display.draw(x, y, '@', '#FFF', '#072');
   }
 
   async act() {

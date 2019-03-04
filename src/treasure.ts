@@ -1,5 +1,5 @@
-import { Actor } from './actor';
 import { Display } from 'rot-js';
+import { Actor } from './types';
 
 export class Treasure implements Actor {
   isHostile = false;
@@ -10,8 +10,8 @@ export class Treasure implements Actor {
 
   act(): void {}
 
-  draw(display: Display): void {
-    display.draw(this.x, this.y, this.symbol, '#000', '#FF0');
+  draw(display: Display, x: number, y: number): void {
+    display.draw(x, y, this.symbol, '#000', '#FF0');
   }
 
   constructor(

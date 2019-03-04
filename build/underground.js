@@ -3683,10 +3683,6 @@
         });
     }
 
-    const boardWidth = 30;
-    const boardHeight = 30;
-    //# sourceMappingURL=constants.js.map
-
     class Enemy {
         constructor(x, y, weight, name, strength, health, world) {
             this.x = x;
@@ -3719,11 +3715,18 @@
         constructor(x, y, world) {
             super(x, y, 15, 'Skeleton', 5, 5, world);
         }
-        draw(display) {
-            display.draw(this.x, this.y, 'S', '#FFF', '#000');
+        draw(display, x, y) {
+            display.draw(x, y, 'S', '#FFF', '#000');
         }
     }
     //# sourceMappingURL=enemy.js.map
+
+    var Tile$1;
+    (function (Tile) {
+        Tile[Tile["Wall"] = 0] = "Wall";
+        Tile[Tile["Floor"] = 1] = "Floor";
+    })(Tile$1 || (Tile$1 = {}));
+    //# sourceMappingURL=types.js.map
 
     class Treasure {
         constructor(name, symbol, x, y) {
@@ -3738,37 +3741,46 @@
             this.health = 100;
         }
         act() { }
-        draw(display) {
-            display.draw(this.x, this.y, this.symbol, '#000', '#FF0');
+        draw(display, x, y) {
+            display.draw(x, y, this.symbol, '#000', '#FF0');
         }
     }
     //# sourceMappingURL=treasure.js.map
 
-    var Tile$1;
-    (function (Tile) {
-        Tile[Tile["Wall"] = 0] = "Wall";
-        Tile[Tile["Floor"] = 1] = "Floor";
-    })(Tile$1 || (Tile$1 = {}));
+    const worldWidth = 100;
+    const worldHeight = 100;
     class World {
-        constructor(display, questLog) {
-            this.display = display;
+        constructor(questLog) {
             this.questLog = questLog;
             this.cells = [];
             this.map = null;
             this.enemies = [];
             this.actors = [];
-            this.dirty = [];
+            this.width = worldWidth;
+            this.height = worldHeight;
             this.startPoint = { x: 0, y: 0 };
-            this.getMapBg = (x, y) => {
-                return (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD';
-            };
-            this.cells = Array.from({
-                length: boardWidth
-            }, () => Array.from({
-                length: boardHeight
-            }, () => ({ tile: Tile$1.Wall, occupant: null })));
+            for (let x = 0; x < worldWidth; x++) {
+                this.cells[x] = [];
+                for (let y = 0; y < worldHeight; y++) {
+                    const cell = {
+                        tile: Tile$1.Wall,
+                        occupant: null
+                    };
+                    if (x > 0) {
+                        const left = this.cells[x - 1][y];
+                        left.right = cell;
+                        cell.left = cell;
+                    }
+                    if (y > 0) {
+                        const top = this.cells[x][y - 1];
+                        top.bottom = cell;
+                        cell.top = top;
+                    }
+                    this.cells[x].push(cell);
+                }
+            }
             const freeCells = [];
-            this.map = new Map$1.Uniform(boardWidth, boardHeight, {});
+            this.map = new Map$1.Uniform(worldWidth, worldHeight, {});
             this.map.create((x, y, value) => {
                 if (!value) {
                     this.cells[x][y].tile = Tile$1.Floor;
@@ -3797,40 +3809,6 @@
                 this.actors.push(treasure);
             }
         }
-        drawTile(x, y, tile) {
-            switch (tile) {
-                case Tile$1.Floor:
-                    this.display.draw(x, y, '', null, this.getMapBg(x, y));
-                    break;
-                case Tile$1.Wall:
-                    if (y < boardHeight - 1 && this.cells[x][y + 1].tile === Tile$1.Floor) {
-                        this.display.draw(x, y, '', '', '#333');
-                    }
-                    break;
-            }
-        }
-        drawCell(x, y) {
-            const cell = this.cells[x][y];
-            if (cell.occupant) {
-                cell.occupant.draw(this.display);
-            }
-            else {
-                this.drawTile(x, y, cell.tile);
-            }
-        }
-        drawEverything() {
-            for (let x = 0; x < boardWidth; x++) {
-                for (let y = 0; y < boardHeight; y++) {
-                    this.drawCell(x, y);
-                }
-            }
-        }
-        drawDirty() {
-            this.dirty.forEach(({ x, y }) => {
-                this.drawCell(x, y);
-            });
-            this.dirty.length = 0;
-        }
         isPassable(x, y) {
             return this.cells[x][y].tile === Tile$1.Floor;
         }
@@ -3840,22 +3818,18 @@
         removeActor(actor) {
             this.actors.splice(this.actors.indexOf(actor), 1);
             this.cells[actor.x][actor.y].occupant = null;
-            this.dirty.push(actor);
         }
         leaveCell(actor) {
             const { x, y } = actor;
             const cell = this.cells[x][y];
             cell.occupant = null;
-            this.dirty.push({ x, y });
         }
         occupyCell(actor) {
             const { x, y } = actor;
             const cell = this.cells[x][y];
             cell.occupant = actor;
-            this.dirty.push({ x, y });
         }
     }
-    //# sourceMappingURL=world.js.map
 
     function getKeyPress() {
         return new Promise(resolve => {
@@ -3888,8 +3862,8 @@
             });
             return result;
         }
-        draw(display) {
-            display.draw(this.x, this.y, '@', '#FFF', '#072');
+        draw(display, x, y) {
+            display.draw(x, y, '@', '#FFF', '#072');
         }
         act() {
             return __awaiter(this, void 0, void 0, function* () {
@@ -3953,6 +3927,7 @@
             }
         }
     }
+    //# sourceMappingURL=player.js.map
 
     const dateFormat = Intl.DateTimeFormat(undefined, {
         hour: 'numeric',
@@ -3984,10 +3959,16 @@
     }
     //# sourceMappingURL=quest-log.js.map
 
-    class Game {
-        constructor() {
-            this.scheduler = new Scheduler$1.Simple();
-            this.player = null;
+    const boardWidth = 30;
+    const boardHeight = 30;
+    //# sourceMappingURL=constants.js.map
+
+    class Camera {
+        constructor(world) {
+            this.world = world;
+            this.getMapBg = (x, y) => {
+                return (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD';
+            };
             this.display = new Display({
                 width: boardWidth,
                 height: boardHeight,
@@ -3997,8 +3978,56 @@
             const container = this.display.getContainer();
             container.classList.add('container');
             document.body.appendChild(container);
+        }
+        render() {
+            const { x: cx, y: cy } = this.player;
+            for (let rx = 0; rx < boardWidth; rx++) {
+                const x = cx + (rx - boardWidth / 2);
+                for (let ry = 0; ry < boardHeight; ry++) {
+                    const y = cy + (ry - boardHeight / 2);
+                    if (x >= 0 && x < this.world.width && y >= 0 && y < this.world.height) {
+                        const cell = this.world.cells[x][y];
+                        this.drawCell(cell, rx, ry);
+                    }
+                    else {
+                        this.display.draw(rx, ry, '', '', '');
+                    }
+                }
+            }
+        }
+        drawTile(x, y, cell) {
+            switch (cell.tile) {
+                case Tile$1.Floor:
+                    this.display.draw(x, y, '', null, this.getMapBg(x, y));
+                    break;
+                case Tile$1.Wall:
+                    if (cell.bottom && cell.bottom.tile === Tile$1.Floor) {
+                        this.display.draw(x, y, '', '', '#333');
+                    }
+                    else {
+                        this.display.draw(x, y, '', '', '');
+                    }
+                    break;
+            }
+        }
+        drawCell(cell, x, y) {
+            if (cell.occupant) {
+                cell.occupant.draw(this.display, x, y);
+            }
+            else {
+                this.drawTile(x, y, cell);
+            }
+        }
+    }
+    //# sourceMappingURL=camera.js.map
+
+    class Game {
+        constructor() {
+            this.scheduler = new Scheduler$1.Simple();
+            this.player = null;
             this.questLog = new QuestLog();
-            this.world = new World(this.display, this.questLog);
+            this.world = new World(this.questLog);
+            this.camera = new Camera(this.world);
         }
         start() {
             return __awaiter(this, void 0, void 0, function* () {
@@ -4010,17 +4039,18 @@
                 this.player.y = this.world.startPoint.y;
                 this.world.actors.push(this.player);
                 this.world.occupyCell(this.player);
+                this.camera.player = this.player;
                 this.world.actors.forEach(actor => {
                     this.scheduler.add(actor, true);
                 });
-                this.world.drawEverything();
+                this.camera.render();
                 while (1) {
                     let actor = this.scheduler.next();
                     if (!actor) {
                         break;
                     }
                     yield actor.act();
-                    this.world.drawDirty();
+                    this.camera.render();
                 }
             });
         }

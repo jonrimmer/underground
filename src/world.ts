@@ -1,48 +1,52 @@
-import { boardWidth, boardHeight } from './constants';
-import { Map, RNG, Display } from 'rot-js';
+import { Map, RNG } from 'rot-js';
 import Uniform from 'rot-js/lib/map/uniform';
 import { Enemy, Skeleton } from './enemy';
-import { Actor } from './actor';
-import { Pos } from './types';
+import { Pos, Cell, Actor, Tile } from './types';
 import { QuestLog } from './quest-log';
 import { Treasure } from './treasure';
 
-export enum Tile {
-  Wall = 0,
-  Floor = 1
-}
-
-interface Cell {
-  tile: Tile;
-  occupant: Actor | null;
-}
+const worldWidth = 100;
+const worldHeight = 100;
 
 export class World {
   public cells: Cell[][] = [];
   public map: Uniform | null = null;
   public enemies: Enemy[] = [];
   public actors: Actor[] = [];
-  private dirty: Pos[] = [];
+  public width = worldWidth;
+  public height = worldHeight;
 
   public startPoint: Pos = { x: 0, y: 0 };
 
-  constructor(private display: Display, public questLog: QuestLog) {
-    this.cells = Array.from(
-      {
-        length: boardWidth
-      },
-      () =>
-        Array.from(
-          {
-            length: boardHeight
-          },
-          () => ({ tile: Tile.Wall, occupant: null })
-        )
-    );
+  constructor(public questLog: QuestLog) {
+    for (let x = 0; x < worldWidth; x++) {
+      this.cells[x] = [];
+
+      for (let y = 0; y < worldHeight; y++) {
+        const cell: Cell = {
+          tile: Tile.Wall,
+          occupant: null
+        };
+
+        if (x > 0) {
+          const left = this.cells[x - 1][y];
+          left.right = cell;
+          cell.left = cell;
+        }
+
+        if (y > 0) {
+          const top = this.cells[x][y - 1];
+          top.bottom = cell;
+          cell.top = top;
+        }
+
+        this.cells[x].push(cell);
+      }
+    }
 
     const freeCells: { x: number; y: number }[] = [];
 
-    this.map = new Map.Uniform(boardWidth, boardHeight, {});
+    this.map = new Map.Uniform(worldWidth, worldHeight, {});
     this.map.create((x, y, value) => {
       if (!value) {
         this.cells[x][y].tile = Tile.Floor;
@@ -77,47 +81,6 @@ export class World {
     }
   }
 
-  getMapBg = (x: number, y: number) => {
-    return (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD';
-  };
-
-  drawTile(x: number, y: number, tile: Tile) {
-    switch (tile) {
-      case Tile.Floor:
-        this.display.draw(x, y, '', null, this.getMapBg(x, y));
-        break;
-      case Tile.Wall:
-        if (y < boardHeight - 1 && this.cells[x][y + 1].tile === Tile.Floor) {
-          this.display.draw(x, y, '', '', '#333');
-        }
-        break;
-    }
-  }
-
-  drawCell(x: number, y: number) {
-    const cell = this.cells[x][y];
-    if (cell.occupant) {
-      cell.occupant.draw(this.display);
-    } else {
-      this.drawTile(x, y, cell.tile);
-    }
-  }
-
-  drawEverything() {
-    for (let x = 0; x < boardWidth; x++) {
-      for (let y = 0; y < boardHeight; y++) {
-        this.drawCell(x, y);
-      }
-    }
-  }
-
-  drawDirty() {
-    this.dirty.forEach(({ x, y }) => {
-      this.drawCell(x, y);
-    });
-    this.dirty.length = 0;
-  }
-
   isPassable(x: number, y: number) {
     return this.cells[x][y].tile === Tile.Floor;
   }
@@ -129,20 +92,17 @@ export class World {
   removeActor(actor: Actor) {
     this.actors.splice(this.actors.indexOf(actor), 1);
     this.cells[actor.x][actor.y].occupant = null;
-    this.dirty.push(actor);
   }
 
   leaveCell(actor: Actor) {
     const { x, y } = actor;
     const cell = this.cells[x][y];
     cell.occupant = null;
-    this.dirty.push({ x, y });
   }
 
   occupyCell(actor: Actor) {
     const { x, y } = actor;
     const cell = this.cells[x][y];
     cell.occupant = actor;
-    this.dirty.push({ x, y });
   }
 }
