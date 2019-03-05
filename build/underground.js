@@ -1746,7 +1746,7 @@
 
     var Scheduler$1 = { Simple, Speed, Action };
 
-    class Map {
+    class Map$1 {
         /**
          * @class Base map generator
          * @param {int} [width=ROT.DEFAULT_WIDTH]
@@ -1773,7 +1773,7 @@
      * @class Simple empty rectangular room
      * @augments ROT.Map
      */
-    class Arena extends Map {
+    class Arena extends Map$1 {
         create(callback) {
             let w = this._width - 1;
             let h = this._height - 1;
@@ -1791,7 +1791,7 @@
      * @class Dungeon map: has rooms and corridors
      * @augments ROT.Map
      */
-    class Dungeon extends Map {
+    class Dungeon extends Map$1 {
         constructor(width, height) {
             super(width, height);
             this._rooms = [];
@@ -2481,7 +2481,7 @@
      * @param {int[]} [options.survive] List of neighbor counts for an existing  cell to survive
      * @param {int} [options.topology] Topology 4 or 6 or 8
      */
-    class Cellular extends Map {
+    class Cellular extends Map$1 {
         constructor(width, height, options = {}) {
             super(width, height);
             this._options = {
@@ -3032,7 +3032,7 @@
      * Maze generator - Eller's algorithm
      * See http://homepages.cwi.nl/~tromp/maze.html for explanation
      */
-    class EllerMaze extends Map {
+    class EllerMaze extends Map$1 {
         create(callback) {
             let map = this._fillMap(1);
             let w = Math.ceil((this._width - 2) / 2);
@@ -3095,7 +3095,7 @@
      * @class Recursively divided maze, http://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_division_method
      * @augments ROT.Map
      */
-    class DividedMaze extends Map {
+    class DividedMaze extends Map$1 {
         constructor() {
             super(...arguments);
             this._stack = [];
@@ -3198,7 +3198,7 @@
      * Icey's Maze generator
      * See http://www.roguebasin.roguelikedevelopment.org/index.php?title=Simple_maze for explanation
      */
-    class IceyMaze extends Map {
+    class IceyMaze extends Map$1 {
         constructor(width, height, regularity = 0) {
             super(width, height);
             this._regularity = regularity;
@@ -3303,7 +3303,7 @@
      * Dungeon generator which uses the "orginal" Rogue dungeon generation algorithm. See http://kuoi.com/~kamikaze/GameDesign/art07_rogue_dungeon.php
      * @author hyakugei
      */
-    class Rogue extends Map {
+    class Rogue extends Map$1 {
         constructor(width, height, options) {
             super(width, height);
             this.map = [];
@@ -3648,7 +3648,7 @@
         }
     }
 
-    var Map$1 = { Arena, Uniform, Cellular, Digger, EllerMaze, DividedMaze, IceyMaze, Rogue };
+    var Map$2 = { Arena, Uniform, Cellular, Digger, EllerMaze, DividedMaze, IceyMaze, Rogue };
 
     /**
      * Base noise generator
@@ -3683,10 +3683,38 @@
         });
     }
 
-    class Enemy {
-        constructor(x, y, weight, name, strength, health, world) {
-            this.x = x;
-            this.y = y;
+    class Actor {
+        constructor() {
+            this._cell = null;
+        }
+        get cell() {
+            return this._cell;
+        }
+        get x() {
+            return this._cell ? this._cell.x : 0;
+        }
+        get y() {
+            return this._cell ? this._cell.y : 0;
+        }
+        set cell(value) {
+            if (value !== this._cell) {
+                const oldCell = this._cell;
+                this._cell = value;
+                if (oldCell) {
+                    oldCell.removeEntity(this);
+                }
+                if (this._cell) {
+                    this._cell.addEntity(this);
+                }
+            }
+        }
+    }
+    //# sourceMappingURL=actor.js.map
+
+    class Enemy extends Actor {
+        constructor(id, weight, name, strength, health, world) {
+            super();
+            this.id = id;
             this.weight = weight;
             this.name = name;
             this.strength = strength;
@@ -3712,11 +3740,11 @@
         }
     }
     class Skeleton extends Enemy {
-        constructor(x, y, world) {
-            super(x, y, 15, 'Skeleton', 5, 5, world);
-        }
-        draw(display, x, y) {
-            display.draw(x, y, 'S', '#FFF', '#000');
+        constructor(id, world) {
+            super(`SKL${id}`, 15, 'Skeleton', 5, 5, world);
+            this.char = 'S';
+            this.bgColor = '#000';
+            this.fgColor = '#FFF';
         }
     }
     //# sourceMappingURL=enemy.js.map
@@ -3728,59 +3756,108 @@
     })(Tile$1 || (Tile$1 = {}));
     //# sourceMappingURL=types.js.map
 
-    class Treasure {
-        constructor(name, symbol, x, y) {
-            this.name = name;
-            this.symbol = symbol;
+    class Cell {
+        constructor(x, y, tile, world) {
             this.x = x;
             this.y = y;
+            this.tile = tile;
+            this.world = world;
+            this._contents = new Map();
+            this.id = `${x}:${y}`;
+            this.world.reportEmpty(this);
+        }
+        get top() {
+            return this.y > 0 ? this.world.grid[this.x][this.y - 1] : null;
+        }
+        get bottom() {
+            return this.y < this.world.grid[this.x].length
+                ? this.world.grid[this.x][this.y + 1]
+                : null;
+        }
+        get left() {
+            return this.x > 0 ? this.world.grid[this.x - 1][this.y] : null;
+        }
+        get right() {
+            return this.x < this.world.grid.length - 1
+                ? this.world.grid[this.x + 1][this.y]
+                : null;
+        }
+        relativeCell(dx, dy) {
+            return this.world.grid[this.x + dx][this.y + dy];
+        }
+        get isEmpty() {
+            return this._contents.size === 0;
+        }
+        get contents() {
+            return Array.from(this._contents.values());
+        }
+        get isPassable() {
+            return this.tile == Tile$1.Floor;
+        }
+        addEntity(entity) {
+            if (!this._contents.has(entity.id)) {
+                this._contents.set(entity.id, entity);
+                if (entity.cell !== this) {
+                    entity.cell = this;
+                }
+                if (this._contents.size === 1) {
+                    this.world.reportOccupied(this);
+                }
+            }
+        }
+        removeEntity(entity) {
+            if (this._contents.has(entity.id)) {
+                this._contents.delete(entity.id);
+                if (entity.cell === this) {
+                    entity.cell = null;
+                }
+                if (this._contents.size === 0) {
+                    this.world.reportOccupied(this);
+                }
+            }
+        }
+    }
+    //# sourceMappingURL=cell.js.map
+
+    class Treasure extends Actor {
+        constructor(id, name, char) {
+            super();
+            this.name = name;
+            this.char = char;
+            this.bgColor = '#FF0';
+            this.fgColor = '#000';
             this.isHostile = false;
             this.isPickable = true;
             this.weight = 1;
             this.strength = 0;
             this.health = 100;
+            this.id = `TRE${id}`;
         }
         act() { }
-        draw(display, x, y) {
-            display.draw(x, y, this.symbol, '#000', '#FF0');
-        }
+        notifyAttack() { }
     }
     //# sourceMappingURL=treasure.js.map
 
     const worldWidth = 100;
     const worldHeight = 100;
     class World {
-        constructor(questLog) {
+        constructor(questLog, entityManager) {
             this.questLog = questLog;
+            this.entityManager = entityManager;
             this.cells = [];
             this.map = null;
-            this.enemies = [];
-            this.actors = [];
             this.width = worldWidth;
             this.height = worldHeight;
-            this.startPoint = { x: 0, y: 0 };
+            this.emptyCells = new Set();
+            this.occupiedCells = new Set();
             for (let x = 0; x < worldWidth; x++) {
                 this.cells[x] = [];
                 for (let y = 0; y < worldHeight; y++) {
-                    const cell = {
-                        tile: Tile$1.Wall,
-                        occupant: null
-                    };
-                    if (x > 0) {
-                        const left = this.cells[x - 1][y];
-                        left.right = cell;
-                        cell.left = cell;
-                    }
-                    if (y > 0) {
-                        const top = this.cells[x][y - 1];
-                        top.bottom = cell;
-                        cell.top = top;
-                    }
-                    this.cells[x].push(cell);
+                    this.cells[x].push(new Cell(x, y, Tile$1.Wall, this));
                 }
             }
             const freeCells = [];
-            this.map = new Map$1.Uniform(worldWidth, worldHeight, {});
+            this.map = new Map$2.Uniform(worldWidth, worldHeight, {});
             this.map.create((x, y, value) => {
                 if (!value) {
                     this.cells[x][y].tile = Tile$1.Floor;
@@ -3789,47 +3866,46 @@
             });
             // Put the player in the middle of the first room.
             const [x, y] = this.map.getRooms()[0].getCenter();
-            this.startPoint = { x, y };
-            this.enemies.length = 0;
+            this.startPoint = this.cells[x][y];
             for (let i = 0; i < 2; i++) {
                 const c = RNG$1.getUniformInt(0, freeCells.length - 1);
                 const { x, y } = freeCells[c];
-                const enemy = new Skeleton(x, y, this);
-                this.cells[x][y].occupant = enemy;
+                this.entityManager.createEntity(id => {
+                    const enemy = new Skeleton(id, this);
+                    enemy.cell = this.cells[x][y];
+                });
                 freeCells.splice(c, 1);
-                this.enemies.push(enemy);
-                this.actors.push(enemy);
             }
             for (let i = 0; i < 3; i++) {
                 const c = RNG$1.getUniformInt(0, freeCells.length - 1);
                 const { x, y } = freeCells[c];
-                const treasure = new Treasure('Cash', '$', x, y);
-                this.cells[x][y].occupant = treasure;
-                freeCells.splice(c, 1);
-                this.actors.push(treasure);
+                this.entityManager.createEntity(id => {
+                    const treasure = new Treasure(id, 'Cash', '$');
+                    treasure.cell = this.cells[x][y];
+                    freeCells.splice(c, 1);
+                });
             }
         }
-        isPassable(x, y) {
-            return this.cells[x][y].tile === Tile$1.Floor;
+        get grid() {
+            return this.cells;
         }
-        isOccupied(x, y) {
-            return this.cells[x][y].occupant;
+        reportEmpty(cell) {
+            this.emptyCells.add(cell);
+            this.occupiedCells.delete(cell);
         }
-        removeActor(actor) {
-            this.actors.splice(this.actors.indexOf(actor), 1);
-            this.cells[actor.x][actor.y].occupant = null;
+        reportOccupied(cell) {
+            this.emptyCells.delete(cell);
+            this.occupiedCells.add(cell);
         }
-        leaveCell(actor) {
-            const { x, y } = actor;
-            const cell = this.cells[x][y];
-            cell.occupant = null;
-        }
-        occupyCell(actor) {
-            const { x, y } = actor;
-            const cell = this.cells[x][y];
-            cell.occupant = actor;
+        getAllActors() {
+            const result = [];
+            this.occupiedCells.forEach(cell => {
+                result.push(...cell.contents);
+            });
+            return result;
         }
     }
+    //# sourceMappingURL=world.js.map
 
     function getKeyPress() {
         return new Promise(resolve => {
@@ -3842,11 +3918,13 @@
     }
     //# sourceMappingURL=util.js.map
 
-    class Player {
-        constructor(world) {
+    class Player extends Actor {
+        constructor(id, world) {
+            super();
             this.world = world;
-            this.x = 0;
-            this.y = 0;
+            this.char = '@';
+            this.bgColor = '#FFF';
+            this.fgColor = '#072';
             this.isHostile = false;
             this.isPickable = false;
             this.strength = 10;
@@ -3854,6 +3932,7 @@
             this.name = 'Player';
             this.health = 100;
             this.inventory = [];
+            this.id = `PLY${id}`;
         }
         get burden() {
             let result = 0;
@@ -3861,9 +3940,6 @@
                 result += item.weight;
             });
             return result;
-        }
-        draw(display, x, y) {
-            display.draw(x, y, '@', '#FFF', '#072');
         }
         act() {
             return __awaiter(this, void 0, void 0, function* () {
@@ -3894,23 +3970,22 @@
             }
         }
         move(dx, dy) {
-            const newX = this.x + dx;
-            const newY = this.y + dy;
-            if (this.world.isPassable(newX, newY)) {
-                const occupant = this.world.isOccupied(newX, newY);
-                if (occupant) {
-                    if (occupant.isHostile) {
-                        this.attack(occupant);
+            if (this.cell) {
+                const target = this.cell.relativeCell(dx, dy);
+                if (target.isPassable) {
+                    const contents = target.contents;
+                    let enemy = contents.find(actor => actor.isHostile);
+                    if (enemy) {
+                        this.attack(enemy);
                         return;
                     }
-                    if (occupant.isPickable) {
-                        this.pickup(occupant);
+                    for (let actor of target.contents) {
+                        if (actor.isPickable) {
+                            this.pickup(actor);
+                        }
                     }
+                    this.cell = target;
                 }
-                this.world.leaveCell(this);
-                this.x = newX;
-                this.y = newY;
-                this.world.occupyCell(this);
             }
         }
         attack(target) {
@@ -3921,11 +3996,12 @@
         }
         pickup(item) {
             if (this.burden + item.weight <= this.strength) {
-                this.world.removeActor(item);
+                item.cell = null;
                 this.inventory.push(item);
                 this.world.questLog.addEntry(`${this.name} picked up a ${item.name}`, 'success');
             }
         }
+        notifyAttack() { }
     }
     //# sourceMappingURL=player.js.map
 
@@ -3966,7 +4042,7 @@
     class Camera {
         constructor(world) {
             this.world = world;
-            this.getMapBg = (x, y) => {
+            this.getMapBg = ({ x, y }) => {
                 return (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD';
             };
             this.display = new Display({
@@ -3978,6 +4054,9 @@
             const container = this.display.getContainer();
             container.classList.add('container');
             document.body.appendChild(container);
+        }
+        draw(x, y, displayable) {
+            this.display.draw(x, y, displayable.char, displayable.fgColor, displayable.bgColor);
         }
         render() {
             const { x: cx, y: cy } = this.player;
@@ -3998,7 +4077,7 @@
         drawTile(x, y, cell) {
             switch (cell.tile) {
                 case Tile$1.Floor:
-                    this.display.draw(x, y, '', null, this.getMapBg(x, y));
+                    this.display.draw(x, y, '', null, this.getMapBg(cell));
                     break;
                 case Tile$1.Wall:
                     if (cell.bottom && cell.bottom.tile === Tile$1.Floor) {
@@ -4011,22 +4090,33 @@
             }
         }
         drawCell(cell, x, y) {
-            if (cell.occupant) {
-                cell.occupant.draw(this.display, x, y);
+            if (!cell.isEmpty) {
+                this.draw(x, y, cell.contents[0]);
             }
             else {
                 this.drawTile(x, y, cell);
             }
         }
     }
-    //# sourceMappingURL=camera.js.map
+
+    class EntityManager {
+        constructor() {
+            this.id = 1;
+        }
+        createEntity(factory) {
+            this.id++;
+            return factory(this.id);
+        }
+    }
+    //# sourceMappingURL=manager.js.map
 
     class Game {
         constructor() {
             this.scheduler = new Scheduler$1.Simple();
             this.player = null;
             this.questLog = new QuestLog();
-            this.world = new World(this.questLog);
+            this.entityManager = new EntityManager();
+            this.world = new World(this.questLog, this.entityManager);
             this.camera = new Camera(this.world);
         }
         start() {
@@ -4034,13 +4124,13 @@
                 this.questLog.clear();
                 this.questLog.addEntry('Your adventure begins!', 'info');
                 this.scheduler.clear();
-                this.player = new Player(this.world);
-                this.player.x = this.world.startPoint.x;
-                this.player.y = this.world.startPoint.y;
-                this.world.actors.push(this.player);
-                this.world.occupyCell(this.player);
-                this.camera.player = this.player;
-                this.world.actors.forEach(actor => {
+                this.entityManager.createEntity(id => {
+                    const player = new Player(id, this.world);
+                    player.cell = this.world.startPoint;
+                    this.player = player;
+                    this.camera.player = this.player;
+                });
+                this.world.getAllActors().forEach(actor => {
                     this.scheduler.add(actor, true);
                 });
                 this.camera.render();

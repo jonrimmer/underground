@@ -1,9 +1,10 @@
 import { World } from './world';
 import { Scheduler } from 'rot-js';
-import { Player } from './player';
+import { Player } from './entities/player';
 import { QuestLog } from './quest-log';
 import { Camera } from './camera';
-import { Actor } from './types';
+import { EntityManager } from './entities/manager';
+import { Actor } from './entities/actor';
 
 export class Game {
   scheduler = new Scheduler.Simple<Actor>();
@@ -11,11 +12,12 @@ export class Game {
   world: World;
   questLog: QuestLog;
   camera: Camera;
+  entityManager: EntityManager;
 
   constructor() {
     this.questLog = new QuestLog();
-
-    this.world = new World(this.questLog);
+    this.entityManager = new EntityManager();
+    this.world = new World(this.questLog, this.entityManager);
     this.camera = new Camera(this.world);
   }
 
@@ -24,14 +26,15 @@ export class Game {
     this.questLog.addEntry('Your adventure begins!', 'info');
     this.scheduler.clear();
 
-    this.player = new Player(this.world);
-    this.player.x = this.world.startPoint.x;
-    this.player.y = this.world.startPoint.y;
-    this.world.actors.push(this.player);
-    this.world.occupyCell(this.player);
-    this.camera.player = this.player;
+    this.entityManager.createEntity(id => {
+      const player = new Player(id, this.world);
+      player.cell = this.world.startPoint;
 
-    this.world.actors.forEach(actor => {
+      this.player = player;
+      this.camera.player = this.player;
+    });
+
+    this.world.getAllActors().forEach(actor => {
       this.scheduler.add(actor, true);
     });
 

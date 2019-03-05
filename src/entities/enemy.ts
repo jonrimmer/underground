@@ -1,8 +1,10 @@
-import { Display } from 'rot-js';
-import { World } from './world';
-import { Actor } from './types';
+import { World } from '../world';
+import { Actor } from './actor';
 
-export abstract class Enemy implements Actor {
+export abstract class Enemy extends Actor {
+  public abstract char: string;
+  public abstract bgColor: string;
+  public abstract fgColor: string;
   public isHostile = true;
   public currentTarget: Actor | null = null;
 
@@ -11,16 +13,15 @@ export abstract class Enemy implements Actor {
   }
 
   constructor(
-    public x: number,
-    public y: number,
+    public readonly id: string,
     public weight: number,
     public name: string,
     public strength: number,
     public health: number,
     private world: World
-  ) {}
-
-  abstract draw(display: Display, x: number, y: number): void;
+  ) {
+    super();
+  }
 
   notifyAttack(aggressor: Actor) {
     this.currentTarget = aggressor;
@@ -44,11 +45,10 @@ export abstract class Enemy implements Actor {
 }
 
 export class Skeleton extends Enemy {
-  constructor(x: number, y: number, world: World) {
-    super(x, y, 15, 'Skeleton', 5, 5, world);
-  }
-
-  draw(display: Display, x: number, y: number) {
-    display.draw(x, y, 'S', '#FFF', '#000');
+  public char = 'S';
+  public bgColor = '#000';
+  public fgColor = '#FFF';
+  constructor(id: number, world: World) {
+    super(`SKL${id}`, 15, 'Skeleton', 5, 5, world);
   }
 }

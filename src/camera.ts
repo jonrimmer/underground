@@ -1,9 +1,10 @@
 import { World } from './world';
-import { Player } from './player';
+import { Player } from './entities/player';
 import { Display } from 'rot-js';
 import { boardWidth, boardHeight } from './constants';
-import { Cell, Tile } from './types';
-import Cellular from 'rot-js/lib/map/cellular';
+import { Tile } from './types';
+import { Cell } from './entities/cell';
+import { Displayable } from './entities/displayable';
 
 export class Camera {
   private display: Display;
@@ -20,6 +21,16 @@ export class Camera {
     const container = this.display.getContainer() as HTMLElement;
     container.classList.add('container');
     document.body.appendChild(container);
+  }
+
+  draw(x: number, y: number, displayable: Displayable) {
+    this.display.draw(
+      x,
+      y,
+      displayable.char,
+      displayable.fgColor,
+      displayable.bgColor
+    );
   }
 
   render() {
@@ -41,14 +52,14 @@ export class Camera {
     }
   }
 
-  getMapBg = (x: number, y: number) => {
+  getMapBg = ({ x, y }: Cell) => {
     return (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD';
   };
 
   drawTile(x: number, y: number, cell: Cell) {
     switch (cell.tile) {
       case Tile.Floor:
-        this.display.draw(x, y, '', null, this.getMapBg(x, y));
+        this.display.draw(x, y, '', null, this.getMapBg(cell));
         break;
       case Tile.Wall:
         if (cell.bottom && cell.bottom.tile === Tile.Floor) {
@@ -61,8 +72,8 @@ export class Camera {
   }
 
   drawCell(cell: Cell, x: number, y: number) {
-    if (cell.occupant) {
-      cell.occupant.draw(this.display, x, y);
+    if (!cell.isEmpty) {
+      this.draw(x, y, cell.contents[0]);
     } else {
       this.drawTile(x, y, cell);
     }

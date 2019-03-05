@@ -1,11 +1,13 @@
-import { getKeyPress } from './util';
-import { KEYS, Display } from 'rot-js';
-import { World } from './world';
-import { Actor } from './types';
+import { getKeyPress } from '../util';
+import { KEYS } from 'rot-js';
+import { World } from '../world';
+import { Actor } from './actor';
 
-export class Player implements Actor {
-  public x: number = 0;
-  public y: number = 0;
+export class Player extends Actor {
+  public readonly id: string;
+  public char = '@';
+  public bgColor = '#FFF';
+  public fgColor = '#072';
   public isHostile = false;
   public isPickable = false;
   public strength = 10;
@@ -23,10 +25,9 @@ export class Player implements Actor {
     return result;
   }
 
-  constructor(private world: World) {}
-
-  draw(display: Display, x: number, y: number) {
-    display.draw(x, y, '@', '#FFF', '#072');
+  constructor(id: number, private world: World) {
+    super();
+    this.id = `PLY${id}`;
   }
 
   async act() {
@@ -60,29 +61,27 @@ export class Player implements Actor {
   }
 
   move(dx: number, dy: number) {
-    const newX = this.x + dx;
-    const newY = this.y + dy;
+    if (this.cell) {
+      const target = this.cell.relativeCell(dx, dy);
 
-    if (this.world.isPassable(newX, newY)) {
-      const occupant = this.world.isOccupied(newX, newY);
+      if (target.isPassable) {
+        const contents = target.contents;
 
-      if (occupant) {
-        if (occupant.isHostile) {
-          this.attack(occupant);
+        let enemy = contents.find(actor => actor.isHostile);
+
+        if (enemy) {
+          this.attack(enemy);
           return;
         }
 
-        if (occupant.isPickable) {
-          this.pickup(occupant);
+        for (let actor of target.contents) {
+          if (actor.isPickable) {
+            this.pickup(actor);
+          }
         }
+
+        this.cell = target;
       }
-
-      this.world.leaveCell(this);
-
-      this.x = newX;
-      this.y = newY;
-
-      this.world.occupyCell(this);
     }
   }
 
@@ -99,7 +98,7 @@ export class Player implements Actor {
 
   pickup(item: Actor) {
     if (this.burden + item.weight <= this.strength) {
-      this.world.removeActor(item);
+      item.cell = null;
       this.inventory.push(item);
       this.world.questLog.addEntry(
         `${this.name} picked up a ${item.name}`,
@@ -107,4 +106,6 @@ export class Player implements Actor {
       );
     }
   }
+
+  notifyAttack() {}
 }
