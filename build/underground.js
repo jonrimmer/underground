@@ -4042,6 +4042,9 @@
     class Camera {
         constructor(world) {
             this.world = world;
+            this._player = null;
+            this.cx = 0;
+            this.cy = 0;
             this.getMapBg = ({ x, y }) => {
                 return (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD';
             };
@@ -4051,19 +4054,26 @@
                 fontSize: 18,
                 forceSquareRatio: true
             });
+            this.windowWidth = Math.floor(boardWidth * 0.15);
+            this.windowHeight = Math.floor(boardHeight * 0.15);
             const container = this.display.getContainer();
             container.classList.add('container');
             document.body.appendChild(container);
+        }
+        set player(value) {
+            this._player = value;
+            this.cx = value.x;
+            this.cy = value.y;
         }
         draw(x, y, displayable) {
             this.display.draw(x, y, displayable.char, displayable.fgColor, displayable.bgColor);
         }
         render() {
-            const { x: cx, y: cy } = this.player;
+            this.updateWindow();
             for (let rx = 0; rx < boardWidth; rx++) {
-                const x = cx + (rx - boardWidth / 2);
+                const x = this.cx + (rx - boardWidth / 2);
                 for (let ry = 0; ry < boardHeight; ry++) {
-                    const y = cy + (ry - boardHeight / 2);
+                    const y = this.cy + (ry - boardHeight / 2);
                     if (x >= 0 && x < this.world.width && y >= 0 && y < this.world.height) {
                         const cell = this.world.cells[x][y];
                         this.drawCell(cell, rx, ry);
@@ -4095,6 +4105,24 @@
             }
             else {
                 this.drawTile(x, y, cell);
+            }
+        }
+        updateWindow() {
+            if (this._player) {
+                const dx = this._player.x - this.cx;
+                const dy = this._player.y - this.cy;
+                if (dx > this.windowWidth) {
+                    this.cx += 1;
+                }
+                else if (dx < -this.windowWidth) {
+                    this.cx -= 1;
+                }
+                if (dy > this.windowHeight) {
+                    this.cy += 1;
+                }
+                else if (dy < -this.windowHeight) {
+                    this.cy -= 1;
+                }
             }
         }
     }
