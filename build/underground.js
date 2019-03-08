@@ -191,6 +191,13 @@
     function mod(x, n) {
         return (x % n + n) % n;
     }
+    function clamp(val, min = 0, max = 1) {
+        if (val < min)
+            return min;
+        if (val > max)
+            return max;
+        return val;
+    }
 
     /**
      * @class Hexagonal backend
@@ -540,6 +547,162 @@
         }
         return cached.slice();
     }
+    /**
+     * Add two or more colors
+     */
+    function add(color1, ...colors) {
+        let result = color1.slice();
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < colors.length; j++) {
+                result[i] += colors[j][i];
+            }
+        }
+        return result;
+    }
+    /**
+     * Add two or more colors, MODIFIES FIRST ARGUMENT
+     */
+    function add_(color1, ...colors) {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < colors.length; j++) {
+                color1[i] += colors[j][i];
+            }
+        }
+        return color1;
+    }
+    /**
+     * Multiply (mix) two or more colors
+     */
+    function multiply(color1, ...colors) {
+        let result = color1.slice();
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < colors.length; j++) {
+                result[i] *= colors[j][i] / 255;
+            }
+            result[i] = Math.round(result[i]);
+        }
+        return result;
+    }
+    /**
+     * Multiply (mix) two or more colors, MODIFIES FIRST ARGUMENT
+     */
+    function multiply_(color1, ...colors) {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < colors.length; j++) {
+                color1[i] *= colors[j][i] / 255;
+            }
+            color1[i] = Math.round(color1[i]);
+        }
+        return color1;
+    }
+    /**
+     * Interpolate (blend) two colors with a given factor
+     */
+    function interpolate(color1, color2, factor = 0.5) {
+        let result = color1.slice();
+        for (let i = 0; i < 3; i++) {
+            result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+        }
+        return result;
+    }
+    const lerp = interpolate;
+    /**
+     * Interpolate (blend) two colors with a given factor in HSL mode
+     */
+    function interpolateHSL(color1, color2, factor = 0.5) {
+        let hsl1 = rgb2hsl(color1);
+        let hsl2 = rgb2hsl(color2);
+        for (let i = 0; i < 3; i++) {
+            hsl1[i] += factor * (hsl2[i] - hsl1[i]);
+        }
+        return hsl2rgb(hsl1);
+    }
+    const lerpHSL = interpolateHSL;
+    /**
+     * Create a new random color based on this one
+     * @param color
+     * @param diff Set of standard deviations
+     */
+    function randomize(color, diff) {
+        if (!(diff instanceof Array)) {
+            diff = Math.round(RNG$1.getNormal(0, diff));
+        }
+        let result = color.slice();
+        for (let i = 0; i < 3; i++) {
+            result[i] += (diff instanceof Array ? Math.round(RNG$1.getNormal(0, diff[i])) : diff);
+        }
+        return result;
+    }
+    /**
+     * Converts an RGB color value to HSL. Expects 0..255 inputs, produces 0..1 outputs.
+     */
+    function rgb2hsl(color) {
+        let r = color[0] / 255;
+        let g = color[1] / 255;
+        let b = color[2] / 255;
+        let max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s, l = (max + min) / 2;
+        if (max == min) {
+            s = 0; // achromatic
+        }
+        else {
+            let d = max - min;
+            s = (l > 0.5 ? d / (2 - max - min) : d / (max + min));
+            switch (max) {
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+                case g:
+                    h = (b - r) / d + 2;
+                    break;
+                case b:
+                    h = (r - g) / d + 4;
+                    break;
+            }
+            h /= 6;
+        }
+        return [h, s, l];
+    }
+    function hue2rgb(p, q, t) {
+        if (t < 0)
+            t += 1;
+        if (t > 1)
+            t -= 1;
+        if (t < 1 / 6)
+            return p + (q - p) * 6 * t;
+        if (t < 1 / 2)
+            return q;
+        if (t < 2 / 3)
+            return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+    }
+    /**
+     * Converts an HSL color value to RGB. Expects 0..1 inputs, produces 0..255 outputs.
+     */
+    function hsl2rgb(color) {
+        let l = color[2];
+        if (color[1] == 0) {
+            l = Math.round(l * 255);
+            return [l, l, l];
+        }
+        else {
+            let s = color[1];
+            let q = (l < 0.5 ? l * (1 + s) : l + s - l * s);
+            let p = 2 * l - q;
+            let r = hue2rgb(p, q, color[0] + 1 / 3);
+            let g = hue2rgb(p, q, color[0]);
+            let b = hue2rgb(p, q, color[0] - 1 / 3);
+            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        }
+    }
+    function toRGB(color) {
+        let clamped = color.map(x => clamp(x, 0, 255));
+        return `rgb(${clamped.join(",")})`;
+    }
+    function toHex(color) {
+        let clamped = color.map(x => clamp(x, 0, 255).toString(16).padStart(2, "0"));
+        return `#${clamped.join("")}`;
+    }
     const CACHE = {
         "black": [0, 0, 0],
         "navy": [0, 0, 128],
@@ -689,6 +852,23 @@
         "white": [255, 255, 255]
     };
 
+    var color = /*#__PURE__*/Object.freeze({
+        fromString: fromString,
+        add: add,
+        add_: add_,
+        multiply: multiply,
+        multiply_: multiply_,
+        interpolate: interpolate,
+        lerp: lerp,
+        interpolateHSL: interpolateHSL,
+        lerpHSL: lerpHSL,
+        randomize: randomize,
+        rgb2hsl: rgb2hsl,
+        hsl2rgb: hsl2rgb,
+        toRGB: toRGB,
+        toHex: toHex
+    });
+
     function clearToAnsi(bg) {
         return `\x1b[0;48;5;${termcolor(bg)}m\x1b[2J`;
     }
@@ -698,11 +878,11 @@
     function positionToAnsi(x, y) {
         return `\x1b[${y + 1};${x + 1}H`;
     }
-    function termcolor(color) {
+    function termcolor(color$1) {
         const SRC_COLORS = 256.0;
         const DST_COLORS = 6.0;
         const COLOR_RATIO = DST_COLORS / SRC_COLORS;
-        let rgb = fromString(color);
+        let rgb = fromString(color$1);
         let r = Math.floor(rgb[0] * COLOR_RATIO);
         let g = Math.floor(rgb[1] * COLOR_RATIO);
         let b = Math.floor(rgb[2] * COLOR_RATIO);
@@ -1745,6 +1925,440 @@
     }
 
     var Scheduler$1 = { Simple, Speed, Action };
+
+    class FOV {
+        /**
+         * @class Abstract FOV algorithm
+         * @param {function} lightPassesCallback Does the light pass through x,y?
+         * @param {object} [options]
+         * @param {int} [options.topology=8] 4/6/8
+         */
+        constructor(lightPassesCallback, options = {}) {
+            this._lightPasses = lightPassesCallback;
+            this._options = Object.assign({ topology: 8 }, options);
+        }
+        /**
+         * Return all neighbors in a concentric ring
+         * @param {int} cx center-x
+         * @param {int} cy center-y
+         * @param {int} r range
+         */
+        _getCircle(cx, cy, r) {
+            let result = [];
+            let dirs, countFactor, startOffset;
+            switch (this._options.topology) {
+                case 4:
+                    countFactor = 1;
+                    startOffset = [0, 1];
+                    dirs = [
+                        DIRS[8][7],
+                        DIRS[8][1],
+                        DIRS[8][3],
+                        DIRS[8][5]
+                    ];
+                    break;
+                case 6:
+                    dirs = DIRS[6];
+                    countFactor = 1;
+                    startOffset = [-1, 1];
+                    break;
+                case 8:
+                    dirs = DIRS[4];
+                    countFactor = 2;
+                    startOffset = [-1, 1];
+                    break;
+                default:
+                    throw new Error("Incorrect topology for FOV computation");
+                    break;
+            }
+            /* starting neighbor */
+            let x = cx + startOffset[0] * r;
+            let y = cy + startOffset[1] * r;
+            /* circle */
+            for (let i = 0; i < dirs.length; i++) {
+                for (let j = 0; j < r * countFactor; j++) {
+                    result.push([x, y]);
+                    x += dirs[i][0];
+                    y += dirs[i][1];
+                }
+            }
+            return result;
+        }
+    }
+
+    /**
+     * @class Discrete shadowcasting algorithm. Obsoleted by Precise shadowcasting.
+     * @augments ROT.FOV
+     */
+    class DiscreteShadowcasting extends FOV {
+        compute(x, y, R, callback) {
+            /* this place is always visible */
+            callback(x, y, 0, 1);
+            /* standing in a dark place. FIXME is this a good idea?  */
+            if (!this._lightPasses(x, y)) {
+                return;
+            }
+            /* start and end angles */
+            let DATA = [];
+            let A, B, cx, cy, blocks;
+            /* analyze surrounding cells in concentric rings, starting from the center */
+            for (let r = 1; r <= R; r++) {
+                let neighbors = this._getCircle(x, y, r);
+                let angle = 360 / neighbors.length;
+                for (let i = 0; i < neighbors.length; i++) {
+                    cx = neighbors[i][0];
+                    cy = neighbors[i][1];
+                    A = angle * (i - 0.5);
+                    B = A + angle;
+                    blocks = !this._lightPasses(cx, cy);
+                    if (this._visibleCoords(Math.floor(A), Math.ceil(B), blocks, DATA)) {
+                        callback(cx, cy, r, 1);
+                    }
+                    if (DATA.length == 2 && DATA[0] == 0 && DATA[1] == 360) {
+                        return;
+                    } /* cutoff? */
+                } /* for all cells in this ring */
+            } /* for all rings */
+        }
+        /**
+         * @param {int} A start angle
+         * @param {int} B end angle
+         * @param {bool} blocks Does current cell block visibility?
+         * @param {int[][]} DATA shadowed angle pairs
+         */
+        _visibleCoords(A, B, blocks, DATA) {
+            if (A < 0) {
+                let v1 = this._visibleCoords(0, B, blocks, DATA);
+                let v2 = this._visibleCoords(360 + A, 360, blocks, DATA);
+                return v1 || v2;
+            }
+            let index = 0;
+            while (index < DATA.length && DATA[index] < A) {
+                index++;
+            }
+            if (index == DATA.length) { /* completely new shadow */
+                if (blocks) {
+                    DATA.push(A, B);
+                }
+                return true;
+            }
+            let count = 0;
+            if (index % 2) { /* this shadow starts in an existing shadow, or within its ending boundary */
+                while (index < DATA.length && DATA[index] < B) {
+                    index++;
+                    count++;
+                }
+                if (count == 0) {
+                    return false;
+                }
+                if (blocks) {
+                    if (count % 2) {
+                        DATA.splice(index - count, count, B);
+                    }
+                    else {
+                        DATA.splice(index - count, count);
+                    }
+                }
+                return true;
+            }
+            else { /* this shadow starts outside an existing shadow, or within a starting boundary */
+                while (index < DATA.length && DATA[index] < B) {
+                    index++;
+                    count++;
+                }
+                /* visible when outside an existing shadow, or when overlapping */
+                if (A == DATA[index - count] && count == 1) {
+                    return false;
+                }
+                if (blocks) {
+                    if (count % 2) {
+                        DATA.splice(index - count, count, A);
+                    }
+                    else {
+                        DATA.splice(index - count, count, A, B);
+                    }
+                }
+                return true;
+            }
+        }
+    }
+
+    /**
+     * @class Precise shadowcasting algorithm
+     * @augments ROT.FOV
+     */
+    class PreciseShadowcasting extends FOV {
+        compute(x, y, R, callback) {
+            /* this place is always visible */
+            callback(x, y, 0, 1);
+            /* standing in a dark place. FIXME is this a good idea?  */
+            if (!this._lightPasses(x, y)) {
+                return;
+            }
+            /* list of all shadows */
+            let SHADOWS = [];
+            let cx, cy, blocks, A1, A2, visibility;
+            /* analyze surrounding cells in concentric rings, starting from the center */
+            for (let r = 1; r <= R; r++) {
+                let neighbors = this._getCircle(x, y, r);
+                let neighborCount = neighbors.length;
+                for (let i = 0; i < neighborCount; i++) {
+                    cx = neighbors[i][0];
+                    cy = neighbors[i][1];
+                    /* shift half-an-angle backwards to maintain consistency of 0-th cells */
+                    A1 = [i ? 2 * i - 1 : 2 * neighborCount - 1, 2 * neighborCount];
+                    A2 = [2 * i + 1, 2 * neighborCount];
+                    blocks = !this._lightPasses(cx, cy);
+                    visibility = this._checkVisibility(A1, A2, blocks, SHADOWS);
+                    if (visibility) {
+                        callback(cx, cy, r, visibility);
+                    }
+                    if (SHADOWS.length == 2 && SHADOWS[0][0] == 0 && SHADOWS[1][0] == SHADOWS[1][1]) {
+                        return;
+                    } /* cutoff? */
+                } /* for all cells in this ring */
+            } /* for all rings */
+        }
+        /**
+         * @param {int[2]} A1 arc start
+         * @param {int[2]} A2 arc end
+         * @param {bool} blocks Does current arc block visibility?
+         * @param {int[][]} SHADOWS list of active shadows
+         */
+        _checkVisibility(A1, A2, blocks, SHADOWS) {
+            if (A1[0] > A2[0]) { /* split into two sub-arcs */
+                let v1 = this._checkVisibility(A1, [A1[1], A1[1]], blocks, SHADOWS);
+                let v2 = this._checkVisibility([0, 1], A2, blocks, SHADOWS);
+                return (v1 + v2) / 2;
+            }
+            /* index1: first shadow >= A1 */
+            let index1 = 0, edge1 = false;
+            while (index1 < SHADOWS.length) {
+                let old = SHADOWS[index1];
+                let diff = old[0] * A1[1] - A1[0] * old[1];
+                if (diff >= 0) { /* old >= A1 */
+                    if (diff == 0 && !(index1 % 2)) {
+                        edge1 = true;
+                    }
+                    break;
+                }
+                index1++;
+            }
+            /* index2: last shadow <= A2 */
+            let index2 = SHADOWS.length, edge2 = false;
+            while (index2--) {
+                let old = SHADOWS[index2];
+                let diff = A2[0] * old[1] - old[0] * A2[1];
+                if (diff >= 0) { /* old <= A2 */
+                    if (diff == 0 && (index2 % 2)) {
+                        edge2 = true;
+                    }
+                    break;
+                }
+            }
+            let visible = true;
+            if (index1 == index2 && (edge1 || edge2)) { /* subset of existing shadow, one of the edges match */
+                visible = false;
+            }
+            else if (edge1 && edge2 && index1 + 1 == index2 && (index2 % 2)) { /* completely equivalent with existing shadow */
+                visible = false;
+            }
+            else if (index1 > index2 && (index1 % 2)) { /* subset of existing shadow, not touching */
+                visible = false;
+            }
+            if (!visible) {
+                return 0;
+            } /* fast case: not visible */
+            let visibleLength;
+            /* compute the length of visible arc, adjust list of shadows (if blocking) */
+            let remove = index2 - index1 + 1;
+            if (remove % 2) {
+                if (index1 % 2) { /* first edge within existing shadow, second outside */
+                    let P = SHADOWS[index1];
+                    visibleLength = (A2[0] * P[1] - P[0] * A2[1]) / (P[1] * A2[1]);
+                    if (blocks) {
+                        SHADOWS.splice(index1, remove, A2);
+                    }
+                }
+                else { /* second edge within existing shadow, first outside */
+                    let P = SHADOWS[index2];
+                    visibleLength = (P[0] * A1[1] - A1[0] * P[1]) / (A1[1] * P[1]);
+                    if (blocks) {
+                        SHADOWS.splice(index1, remove, A1);
+                    }
+                }
+            }
+            else {
+                if (index1 % 2) { /* both edges within existing shadows */
+                    let P1 = SHADOWS[index1];
+                    let P2 = SHADOWS[index2];
+                    visibleLength = (P2[0] * P1[1] - P1[0] * P2[1]) / (P1[1] * P2[1]);
+                    if (blocks) {
+                        SHADOWS.splice(index1, remove);
+                    }
+                }
+                else { /* both edges outside existing shadows */
+                    if (blocks) {
+                        SHADOWS.splice(index1, remove, A1, A2);
+                    }
+                    return 1; /* whole arc visible! */
+                }
+            }
+            let arcLength = (A2[0] * A1[1] - A1[0] * A2[1]) / (A1[1] * A2[1]);
+            return visibleLength / arcLength;
+        }
+    }
+
+    /** Octants used for translating recursive shadowcasting offsets */
+    const OCTANTS = [
+        [-1, 0, 0, 1],
+        [0, -1, 1, 0],
+        [0, -1, -1, 0],
+        [-1, 0, 0, -1],
+        [1, 0, 0, -1],
+        [0, 1, -1, 0],
+        [0, 1, 1, 0],
+        [1, 0, 0, 1]
+    ];
+    /**
+     * @class Recursive shadowcasting algorithm
+     * Currently only supports 4/8 topologies, not hexagonal.
+     * Based on Peter Harkins' implementation of Björn Bergström's algorithm described here: http://www.roguebasin.com/index.php?title=FOV_using_recursive_shadowcasting
+     * @augments ROT.FOV
+     */
+    class RecursiveShadowcasting extends FOV {
+        /**
+         * Compute visibility for a 360-degree circle
+         * @param {int} x
+         * @param {int} y
+         * @param {int} R Maximum visibility radius
+         * @param {function} callback
+         */
+        compute(x, y, R, callback) {
+            //You can always see your own tile
+            callback(x, y, 0, 1);
+            for (let i = 0; i < OCTANTS.length; i++) {
+                this._renderOctant(x, y, OCTANTS[i], R, callback);
+            }
+        }
+        /**
+         * Compute visibility for a 180-degree arc
+         * @param {int} x
+         * @param {int} y
+         * @param {int} R Maximum visibility radius
+         * @param {int} dir Direction to look in (expressed in a ROT.DIRS value);
+         * @param {function} callback
+         */
+        compute180(x, y, R, dir, callback) {
+            //You can always see your own tile
+            callback(x, y, 0, 1);
+            let previousOctant = (dir - 1 + 8) % 8; //Need to retrieve the previous octant to render a full 180 degrees
+            let nextPreviousOctant = (dir - 2 + 8) % 8; //Need to retrieve the previous two octants to render a full 180 degrees
+            let nextOctant = (dir + 1 + 8) % 8; //Need to grab to next octant to render a full 180 degrees
+            this._renderOctant(x, y, OCTANTS[nextPreviousOctant], R, callback);
+            this._renderOctant(x, y, OCTANTS[previousOctant], R, callback);
+            this._renderOctant(x, y, OCTANTS[dir], R, callback);
+            this._renderOctant(x, y, OCTANTS[nextOctant], R, callback);
+        }
+        ;
+        /**
+         * Compute visibility for a 90-degree arc
+         * @param {int} x
+         * @param {int} y
+         * @param {int} R Maximum visibility radius
+         * @param {int} dir Direction to look in (expressed in a ROT.DIRS value);
+         * @param {function} callback
+         */
+        compute90(x, y, R, dir, callback) {
+            //You can always see your own tile
+            callback(x, y, 0, 1);
+            let previousOctant = (dir - 1 + 8) % 8; //Need to retrieve the previous octant to render a full 90 degrees
+            this._renderOctant(x, y, OCTANTS[dir], R, callback);
+            this._renderOctant(x, y, OCTANTS[previousOctant], R, callback);
+        }
+        /**
+         * Render one octant (45-degree arc) of the viewshed
+         * @param {int} x
+         * @param {int} y
+         * @param {int} octant Octant to be rendered
+         * @param {int} R Maximum visibility radius
+         * @param {function} callback
+         */
+        _renderOctant(x, y, octant, R, callback) {
+            //Radius incremented by 1 to provide same coverage area as other shadowcasting radiuses
+            this._castVisibility(x, y, 1, 1.0, 0.0, R + 1, octant[0], octant[1], octant[2], octant[3], callback);
+        }
+        /**
+         * Actually calculates the visibility
+         * @param {int} startX The starting X coordinate
+         * @param {int} startY The starting Y coordinate
+         * @param {int} row The row to render
+         * @param {float} visSlopeStart The slope to start at
+         * @param {float} visSlopeEnd The slope to end at
+         * @param {int} radius The radius to reach out to
+         * @param {int} xx
+         * @param {int} xy
+         * @param {int} yx
+         * @param {int} yy
+         * @param {function} callback The callback to use when we hit a block that is visible
+         */
+        _castVisibility(startX, startY, row, visSlopeStart, visSlopeEnd, radius, xx, xy, yx, yy, callback) {
+            if (visSlopeStart < visSlopeEnd) {
+                return;
+            }
+            for (let i = row; i <= radius; i++) {
+                let dx = -i - 1;
+                let dy = -i;
+                let blocked = false;
+                let newStart = 0;
+                //'Row' could be column, names here assume octant 0 and would be flipped for half the octants
+                while (dx <= 0) {
+                    dx += 1;
+                    //Translate from relative coordinates to map coordinates
+                    let mapX = startX + dx * xx + dy * xy;
+                    let mapY = startY + dx * yx + dy * yy;
+                    //Range of the row
+                    let slopeStart = (dx - 0.5) / (dy + 0.5);
+                    let slopeEnd = (dx + 0.5) / (dy - 0.5);
+                    //Ignore if not yet at left edge of Octant
+                    if (slopeEnd > visSlopeStart) {
+                        continue;
+                    }
+                    //Done if past right edge
+                    if (slopeStart < visSlopeEnd) {
+                        break;
+                    }
+                    //If it's in range, it's visible
+                    if ((dx * dx + dy * dy) < (radius * radius)) {
+                        callback(mapX, mapY, i, 1);
+                    }
+                    if (!blocked) {
+                        //If tile is a blocking tile, cast around it
+                        if (!this._lightPasses(mapX, mapY) && i < radius) {
+                            blocked = true;
+                            this._castVisibility(startX, startY, i + 1, visSlopeStart, slopeStart, radius, xx, xy, yx, yy, callback);
+                            newStart = slopeEnd;
+                        }
+                    }
+                    else {
+                        //Keep narrowing if scanning across a block
+                        if (!this._lightPasses(mapX, mapY)) {
+                            newStart = slopeEnd;
+                            continue;
+                        }
+                        //Block has ended
+                        blocked = false;
+                        visSlopeStart = newStart;
+                    }
+                }
+                if (blocked) {
+                    break;
+                }
+            }
+        }
+    }
+
+    var FOV$1 = { DiscreteShadowcasting, PreciseShadowcasting, RecursiveShadowcasting };
 
     class Map$1 {
         /**
@@ -3659,6 +4273,8 @@
      * @param {ROT.Scheduler} scheduler
      */
 
+    const Color = color;
+
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -3763,6 +4379,7 @@
             this.tile = tile;
             this.world = world;
             this._contents = new Map();
+            this.seen = false;
             this.id = `${x}:${y}`;
             this.world.reportEmpty(this);
         }
@@ -4039,14 +4656,21 @@
     const boardHeight = 30;
     //# sourceMappingURL=constants.js.map
 
+    const FLOOR1 = [238, 238, 238];
+    const FLOOR2 = [221, 221, 221];
     class Camera {
         constructor(world) {
             this.world = world;
             this._player = null;
             this.cx = 0;
             this.cy = 0;
-            this.getMapBg = ({ x, y }) => {
-                return (x % 2) + (y % 2) - 1 ? '#EEE' : '#DDD';
+            this.getMapBg = ({ x, y, seen }, visibility) => {
+                const baseColor = (x % 2) + (y % 2) - 1 ? FLOOR1 : FLOOR2;
+                const invisible = !seen
+                    ? [0, 0, 0]
+                    : [20, 20, 20];
+                const interpolated = Color.interpolate(invisible, baseColor, visibility);
+                return Color.toHex(interpolated);
             };
             this.display = new Display({
                 width: boardWidth,
@@ -4059,6 +4683,12 @@
             const container = this.display.getContainer();
             container.classList.add('container');
             document.body.appendChild(container);
+            this.fov = new FOV$1.PreciseShadowcasting((x, y) => {
+                if (this.validCoords(x, y)) {
+                    return this.world.cells[x][y].tile === Tile$1.Floor;
+                }
+                return false;
+            });
         }
         set player(value) {
             this._player = value;
@@ -4070,13 +4700,28 @@
         }
         render() {
             this.updateWindow();
+            const visible = new Map();
+            if (this._player) {
+                this.fov.compute(this._player.x, this._player.y, boardWidth / 2, (x, y, r, visibility) => {
+                    if (this.validCoords(x, y)) {
+                        const cell = this.world.cells[x][y];
+                        visible.set(cell, visibility);
+                        cell.seen = true;
+                    }
+                });
+            }
             for (let rx = 0; rx < boardWidth; rx++) {
                 const x = this.cx + (rx - boardWidth / 2);
                 for (let ry = 0; ry < boardHeight; ry++) {
                     const y = this.cy + (ry - boardHeight / 2);
-                    if (x >= 0 && x < this.world.width && y >= 0 && y < this.world.height) {
+                    if (this.validCoords(x, y)) {
                         const cell = this.world.cells[x][y];
-                        this.drawCell(cell, rx, ry);
+                        if (visible.has(cell)) {
+                            this.drawCell(cell, rx, ry, visible.get(cell));
+                        }
+                        else {
+                            this.drawCell(cell, rx, ry, 0);
+                        }
                     }
                     else {
                         this.display.draw(rx, ry, '', '', '');
@@ -4084,13 +4729,13 @@
                 }
             }
         }
-        drawTile(x, y, cell) {
+        drawTile(x, y, cell, visibility) {
             switch (cell.tile) {
                 case Tile$1.Floor:
-                    this.display.draw(x, y, '', null, this.getMapBg(cell));
+                    this.display.draw(x, y, '', null, this.getMapBg(cell, visibility));
                     break;
                 case Tile$1.Wall:
-                    if (cell.bottom && cell.bottom.tile === Tile$1.Floor) {
+                    if (cell.bottom && cell.bottom.tile === Tile$1.Floor && visibility > 0) {
                         this.display.draw(x, y, '', '', '#333');
                     }
                     else {
@@ -4099,12 +4744,12 @@
                     break;
             }
         }
-        drawCell(cell, x, y) {
+        drawCell(cell, x, y, visibility) {
             if (!cell.isEmpty) {
                 this.draw(x, y, cell.contents[0]);
             }
             else {
-                this.drawTile(x, y, cell);
+                this.drawTile(x, y, cell, visibility);
             }
         }
         updateWindow() {
@@ -4124,6 +4769,9 @@
                     this.cy -= 1;
                 }
             }
+        }
+        validCoords(x, y) {
+            return x >= 0 && x < this.world.width && y >= 0 && y < this.world.height;
         }
     }
 

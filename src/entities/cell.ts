@@ -5,6 +5,7 @@ import { World } from '../world';
 export class Cell {
   private _contents = new Map<string, Actor>();
   public readonly id: string;
+  public seen = false;
 
   constructor(
     public readonly x: number,
