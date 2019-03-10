@@ -9,8 +9,17 @@ import PreciseShadowcasting from 'rot-js/lib/fov/precise-shadowcasting';
 
 const DEBUG = false;
 
-const FLOOR1: [number, number, number] = [238, 238, 238];
-const FLOOR2: [number, number, number] = [221, 221, 221];
+type RGB = [number, number, number];
+
+const FLOOR1: RGB = [238, 238, 238];
+const FLOOR2: RGB = [221, 221, 221];
+const WALL: RGB = [90, 65, 38];
+
+const WALL_HEX = Color.toHex(WALL);
+
+function darken([r, g, b]: RGB, frac: number): RGB {
+  return [r * frac, g * frac, b * frac].map(v => Math.round(v)) as RGB;
+}
 
 export class Camera {
   private display: Display;
@@ -28,6 +37,10 @@ export class Camera {
   private cy = 0;
   private fov: PreciseShadowcasting;
 
+  get displayContainer() {
+    return this.display.getContainer() as HTMLElement;
+  }
+
   constructor(private world: World) {
     this.display = new Display({
       width: boardWidth,
@@ -38,10 +51,6 @@ export class Camera {
 
     this.windowWidth = Math.floor(boardWidth * 0.15);
     this.windowHeight = Math.floor(boardHeight * 0.15);
-
-    const container = this.display.getContainer() as HTMLElement;
-    container.classList.add('container');
-    document.body.appendChild(container);
 
     this.fov = new FOV.PreciseShadowcasting((x, y) => {
       if (this.validCoords(x, y)) {
@@ -70,7 +79,7 @@ export class Camera {
       this.fov.compute(
         this._player.x,
         this._player.y,
-        boardWidth / 2,
+        8,
         (x, y, r, visibility) => {
           if (this.validCoords(x, y)) {
             const cell = this.world.cells[x][y];
@@ -104,11 +113,8 @@ export class Camera {
 
   getMapBg = ({ x, y, seen }: Cell, visibility: number) => {
     const baseColor = (x % 2) + (y % 2) - 1 ? FLOOR1 : FLOOR2;
-    const invisible: [number, number, number] = !seen
-      ? [0, 0, 0]
-      : [20, 20, 20];
-    const interpolated = Color.interpolate(invisible, baseColor, visibility);
-    return Color.toHex(interpolated);
+    const scaled = seen ? 0.3 + 0.7 * visibility : visibility;
+    return Color.toHex(darken(baseColor, scaled));
   };
 
   drawTile(x: number, y: number, cell: Cell, visibility: number) {
@@ -128,20 +134,17 @@ export class Camera {
           break;
         }
 
-        if (cell.bottom && cell.bottom.tile === Tile.Floor && visibility > 0) {
-          this.display.draw(x, y, '', '', '#333');
-        } else {
-          this.display.draw(x, y, '', '', '');
-        }
+        const scaled = cell.seen ? 0.3 + 0.7 * visibility : visibility;
+        this.display.draw(x, y, '', '', Color.toHex(darken(WALL, scaled)));
         break;
     }
   }
 
   drawCell(cell: Cell, x: number, y: number, visibility: number) {
-    if (!cell.isEmpty) {
+    this.drawTile(x, y, cell, visibility);
+
+    if (!cell.isEmpty && visibility > 0.5) {
       this.draw(x, y, cell.contents[0]);
-    } else {
-      this.drawTile(x, y, cell, visibility);
     }
   }
 

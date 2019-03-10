@@ -1,5 +1,6 @@
 import { World } from '../world';
 import { Actor } from './actor';
+import { LogEntry } from '../log-entry';
 
 export abstract class Enemy extends Actor {
   public abstract char: string;
@@ -33,11 +34,13 @@ export abstract class Enemy extends Actor {
 
       if (Math.abs(tx - this.x) <= 1 && Math.abs(ty - this.y) <= 1) {
         // In range.
-        this.world.questLog.addEntry(
-          `${this.name} attacked ${
-            this.currentTarget.name
-          } and caused no damage.`,
-          'danger'
+        this.world.questLog.push(
+          new LogEntry(
+            `${this.name} attacked ${
+              this.currentTarget.name
+            } and caused no damage.`,
+            'danger'
+          )
         );
       }
     }

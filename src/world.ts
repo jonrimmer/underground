@@ -1,12 +1,12 @@
 import { Map, RNG } from 'rot-js';
 import Uniform from 'rot-js/lib/map/uniform';
-import { Enemy, Skeleton } from './entities/enemy';
-import { Pos, Tile } from './types';
-import { QuestLog } from './quest-log';
+import { Skeleton } from './entities/enemy';
+import { Tile } from './types';
 import { Cell } from './entities/cell';
 import { Actor } from './entities/actor';
 import { EntityManager } from './entities/manager';
 import { Treasure } from './entities/treasure';
+import { LogEntry } from './log-entry';
 
 const worldWidth = 100;
 const worldHeight = 100;
@@ -22,7 +22,10 @@ export class World {
 
   public startPoint: Cell;
 
-  constructor(public questLog: QuestLog, private entityManager: EntityManager) {
+  constructor(
+    public questLog: LogEntry[],
+    private entityManager: EntityManager
+  ) {
     for (let x = 0; x < worldWidth; x++) {
       this.cells[x] = [];
 
@@ -46,7 +49,7 @@ export class World {
 
     this.startPoint = this.cells[x][y];
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 20; i++) {
       const c = RNG.getUniformInt(0, freeCells.length - 1);
       const { x, y } = freeCells[c];
 
@@ -58,7 +61,7 @@ export class World {
       freeCells.splice(c, 1);
     }
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 20; i++) {
       const c = RNG.getUniformInt(0, freeCells.length - 1);
       const { x, y } = freeCells[c];
 

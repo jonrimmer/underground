@@ -2,6 +2,8 @@ import { getKeyPress } from '../util';
 import { KEYS } from 'rot-js';
 import { World } from '../world';
 import { Actor } from './actor';
+import { LogEntry } from '../log-entry';
+import { UIGame } from '../ui/game';
 
 export class Player extends Actor {
   public readonly id: string;
@@ -25,18 +27,16 @@ export class Player extends Actor {
     return result;
   }
 
-  constructor(id: number, private world: World) {
+  constructor(id: number, private world: World, private ui: UIGame) {
     super();
     this.id = `PLY${id}`;
   }
 
   async act() {
-    return getKeyPress().then(keyCode => {
-      this.handleKeyPress(keyCode);
-    });
+    return getKeyPress().then(keyCode => this.handleKeyPress(keyCode));
   }
 
-  handleKeyPress(keyCode: number) {
+  async handleKeyPress(keyCode: number) {
     let dx = 0;
     let dy = 0;
 
@@ -56,11 +56,11 @@ export class Player extends Actor {
     }
 
     if (dx !== 0 || dy !== 0) {
-      this.move(dx, dy);
+      return this.move(dx, dy);
     }
   }
 
-  move(dx: number, dy: number) {
+  async move(dx: number, dy: number) {
     if (this.cell) {
       const target = this.cell.relativeCell(dx, dy);
 
@@ -70,13 +70,20 @@ export class Player extends Actor {
         let enemy = contents.find(actor => actor.isHostile);
 
         if (enemy) {
-          this.attack(enemy);
+          const result = await this.ui.showMenu(['Attack', 'Push', 'Talk']);
+
+          switch (result) {
+            case 'Attack':
+              this.attack(enemy);
+              break;
+          }
           return;
         }
 
         for (let actor of target.contents) {
           if (actor.isPickable) {
             this.pickup(actor);
+            return;
           }
         }
 
@@ -86,9 +93,11 @@ export class Player extends Actor {
   }
 
   attack(target: Actor) {
-    this.world.questLog.addEntry(
-      `${this.name} attacked ${target.name} causing no damage!`,
-      'danger'
+    this.ui.log(
+      new LogEntry(
+        `${this.name} attacked ${target.name} causing no damage!`,
+        'danger'
+      )
     );
 
     if (target.notifyAttack) {
@@ -100,9 +109,8 @@ export class Player extends Actor {
     if (this.burden + item.weight <= this.strength) {
       item.cell = null;
       this.inventory.push(item);
-      this.world.questLog.addEntry(
-        `${this.name} picked up a ${item.name}`,
-        'success'
+      this.ui.log(
+        new LogEntry(`${this.name} picked up a ${item.name}`, 'success')
       );
     }
   }
